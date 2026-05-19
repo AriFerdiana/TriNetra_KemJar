@@ -13,6 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -26,158 +27,122 @@
             }
         }
     </script>
-    <style>
-        [x-cloak] { display: none !important; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #10b981; }
-        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
-        .sidebar-item-active { background: #f0fdf4; color: #10b981; border-right: 4px solid #10b981; }
-        
-        /* Slider & Load Animations */
-        .status-slider { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-        .load-progress { transition: width 0.8s cubic-bezier(0.65, 0, 0.35, 1); }
-        
-        /* UI/UX Glow & Pulse Effects */
-        .glow-emerald { box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); }
-        .glow-red { box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
-        @keyframes pulse-red {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.5; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .pulse-iot { animation: pulse-red 2s infinite; }
-        
-        .progress-bar { transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
-        
-        /* Dark Mode variables (ready for toggle) */
-        .dark-mode { background-color: #0f172a; color: #f8fafc; }
-        .dark-mode .glass { background: rgba(30, 41, 59, 0.7); border-color: rgba(255,255,255,0.1); }
-        .dark-mode aside { background: #1e293b; border-color: #334155; }
-        .dark-mode header { background: rgba(30, 41, 59, 0.6); border-color: #334155; }
-        .dark-mode .bg-white { background: #1e293b; }
-        .dark-mode .text-gray-900 { color: #f8fafc; }
-        .dark-mode .text-gray-500 { color: #94a3b8; }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/collector.css}">
 </head>
 <body class="bg-gray-50 flex h-screen overflow-hidden font-sans text-gray-900" x-data="collectorDashboard()" x-cloak>
 
     <!-- SIDEBAR -->
-    <aside class="w-80 bg-white border-r border-gray-100 flex flex-col h-full z-50 transition-all duration-300">
-        <div class="p-8">
-            <div class="flex items-center gap-3 mb-10">
-                <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-200">
-                    N
+    <aside :class="{'w-24': isSidebarCollapsed, 'w-80': !isSidebarCollapsed, 'translate-x-0': open, '-translate-x-full': !open}" 
+           class="fixed inset-y-0 left-0 bg-white border-r border-gray-100 flex flex-col h-full z-[100] transition-all duration-500 transform lg:translate-x-0 lg:static">
+        
+        <div :class="isSidebarCollapsed ? 'p-4' : 'p-8'" class="h-full flex flex-col transition-all duration-500">
+            <!-- Logo Area -->
+            <div :class="isSidebarCollapsed ? 'flex-col items-center gap-6' : 'flex-row items-center justify-between'" class="flex mb-10 transition-all duration-500">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <img th:src="@{/images/logo_netrasphere.png}" alt="NetraSphere Logo" class="w-10 h-10 min-w-[2.5rem] object-contain drop-shadow-sm">
+                    <div x-show="!isSidebarCollapsed" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                        <h2 class="font-black text-xl tracking-tighter text-gray-900 whitespace-nowrap">NetraSphere</h2>
+                        <p class="text-[10px] uppercase font-bold tracking-[0.2em] text-emerald-600">Collector Unit</p>
+                    </div>
                 </div>
-                <div>
-                    <h2 class="font-black text-xl tracking-tighter text-gray-900">NetraSphere</h2>
-                    <p class="text-[10px] uppercase font-bold tracking-[0.2em] text-emerald-600">Collector Unit</p>
-                </div>
+                <!-- Desktop Collapse Button -->
+                <button type="button" @click="toggleSidebar()" class="hidden lg:flex w-10 h-10 items-center justify-center rounded-2xl hover:bg-gray-50 text-gray-400 transition-all active:scale-90">
+                    <div class="relative w-6 h-5">
+                        <span class="absolute block h-0.5 w-6 bg-current transform transition duration-500 ease-in-out" :class="isSidebarCollapsed ? 'rotate-0 translate-y-0' : 'rotate-0 translate-y-0'"></span>
+                        <span class="absolute block h-0.5 w-6 bg-current transform transition duration-500 ease-in-out top-2" :class="isSidebarCollapsed ? 'opacity-100' : 'opacity-100'"></span>
+                        <span class="absolute block h-0.5 w-6 bg-current transform transition duration-500 ease-in-out top-4" :class="isSidebarCollapsed ? 'rotate-0 translate-y-0' : 'rotate-0 translate-y-0'"></span>
+                    </div>
+                </button>
             </div>
 
-            <nav class="space-y-2">
-                <button type="button" @click="activeTab = 'dashboard'" :class="activeTab === 'dashboard' ? 'sidebar-item-active' : 'text-gray-500 hover:bg-gray-50'" 
-                        class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl font-bold text-sm transition-all group">
-                    <span class="text-xl group-hover:scale-110 transition-transform">🏠</span> Dashboard
+            <nav class="space-y-2 flex-1">
+                <button type="button" @click="activeTab = 'dashboard'; if(window.innerWidth < 1024) open = false" 
+                        :class="[activeTab === 'dashboard' ? 'sidebar-item-active' : 'text-gray-500 hover:bg-gray-50', isSidebarCollapsed ? 'justify-center' : 'gap-4']"
+                        class="w-full flex items-center px-4 py-3.5 rounded-xl font-bold text-sm transition-all group overflow-hidden">
+                    <span class="text-xl group-hover:scale-110 transition-transform">🏠</span> 
+                    <span x-show="!isSidebarCollapsed" x-transition class="whitespace-nowrap">Dashboard</span>
                 </button>
-                <button type="button" @click="activeTab = 'pending'" :class="activeTab === 'pending' ? 'sidebar-item-active' : 'text-gray-500 hover:bg-gray-50'" 
-                        class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl font-bold text-sm transition-all group relative">
-                    <span class="text-xl group-hover:scale-110 transition-transform">⏳</span> Tugas Aktif
-                    <span th:if="${pendingDeposits.totalElements > 0}" class="absolute right-4 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full" th:text="${pendingDeposits.totalElements}">0</span>
+                <button type="button" @click="activeTab = 'pending'; if(window.innerWidth < 1024) open = false" 
+                        :class="[activeTab === 'pending' ? 'sidebar-item-active' : 'text-gray-500 hover:bg-gray-50', isSidebarCollapsed ? 'justify-center' : 'gap-4']"
+                        class="w-full flex items-center px-4 py-3.5 rounded-xl font-bold text-sm transition-all group relative overflow-hidden">
+                    <span class="text-xl group-hover:scale-110 transition-transform">⏳</span> 
+                    <span x-show="!isSidebarCollapsed" x-transition class="whitespace-nowrap">Tugas Aktif</span>
+                    <span th:if="${pendingDeposits.totalElements > 0}" 
+                          class="absolute bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-black border-2 border-white" 
+                          :class="isSidebarCollapsed ? 'top-1 right-3' : 'right-4'"
+                          th:attr="data-pending-count=${pendingDeposits.totalElements}"
+                          th:text="${pendingDeposits.totalElements}">0</span>
                 </button>
-                <button type="button" @click="activeTab = 'history'" :class="activeTab === 'history' ? 'sidebar-item-active' : 'text-gray-500 hover:bg-gray-50'" 
-                        class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl font-bold text-sm transition-all group">
-                    <span class="text-xl group-hover:scale-110 transition-transform">📋</span> Riwayat
+                <button type="button" @click="activeTab = 'history'; if(window.innerWidth < 1024) open = false" 
+                        :class="[activeTab === 'history' ? 'sidebar-item-active' : 'text-gray-500 hover:bg-gray-50', isSidebarCollapsed ? 'justify-center' : 'gap-4']"
+                        class="w-full flex items-center px-4 py-3.5 rounded-xl font-bold text-sm transition-all group overflow-hidden">
+                    <span class="text-xl group-hover:scale-110 transition-transform">📋</span> 
+                    <span x-show="!isSidebarCollapsed" x-transition class="whitespace-nowrap">Riwayat</span>
                 </button>
-                <button type="button" @click="activeTab = 'stats'; if(!chartInitialized) { setTimeout(() => initChart(), 100); chartInitialized=true; }" 
-                        :class="activeTab === 'stats' ? 'sidebar-item-active' : 'text-gray-500 hover:bg-gray-50'" 
-                        class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl font-bold text-sm transition-all group">
-                    <span class="text-xl group-hover:scale-110 transition-transform">📊</span> Analitik
+                <button type="button" @click="activeTab = 'stats'; if(!chartInitialized) { setTimeout(() => initChart(), 100); chartInitialized=true; }; if(window.innerWidth < 1024) open = false" 
+                        :class="[activeTab === 'stats' ? 'sidebar-item-active' : 'text-gray-500 hover:bg-gray-50', isSidebarCollapsed ? 'justify-center' : 'gap-4']"
+                        class="w-full flex items-center px-4 py-3.5 rounded-xl font-bold text-sm transition-all group overflow-hidden">
+                    <span class="text-xl group-hover:scale-110 transition-transform">📊</span> 
+                    <span x-show="!isSidebarCollapsed" x-transition class="whitespace-nowrap">Analitik</span>
+                </button>
+                <button type="button" @click="activeTab = 'map'; if(!mapInitialized) { setTimeout(() => initFullMap(), 100); mapInitialized=true; }; if(window.innerWidth < 1024) open = false" 
+                        :class="[activeTab === 'map' ? 'sidebar-item-active' : 'text-gray-500 hover:bg-gray-50', isSidebarCollapsed ? 'justify-center' : 'gap-4']"
+                        class="w-full flex items-center px-4 py-3.5 rounded-xl font-bold text-sm transition-all group overflow-hidden">
+                    <span class="text-xl group-hover:scale-110 transition-transform">📍</span> 
+                    <span x-show="!isSidebarCollapsed" x-transition class="whitespace-nowrap">Rute & Lokasi</span>
                 </button>
             </nav>
-        </div>
 
-        <!-- SIDEBAR FOOTER: PROFILE POPUP (BOTTOM LEFT AS REQUESTED) -->
-        <div class="mt-auto p-8 border-t border-gray-100 bg-gray-50/50 relative">
-            <!-- Profile Popup Menu -->
-            <div x-show="profileMenuOpen" 
-                 @click.away="profileMenuOpen = false"
-                 x-transition:enter="transition ease-out duration-200"
-                 x-transition:enter-start="opacity-0 translate-y-4 scale-95"
-                 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                 class="absolute bottom-full left-6 mb-4 w-64 bg-white rounded-[2rem] shadow-2xl border border-gray-100 py-4 z-50 overflow-hidden"
-                 style="display:none;">
-                
-                <div class="px-6 py-4 border-b border-gray-50 mb-2">
-                    <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Akun Petugas</p>
-                    <p class="font-bold text-gray-800 text-sm truncate" th:text="${collectorName}">Nama Petugas</p>
-                </div>
-
-                <div class="space-y-1 px-2">
-                    <button type="button" @click="showEditProfileModal = true; profileMenuOpen = false" 
-                            class="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 rounded-2xl transition-all">
-                        <span class="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center">👤</span>
-                        Edit Profil
-                    </button>
-                    <button type="button" @click="showPasswordModal = true; profileMenuOpen = false" 
-                            class="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-600 hover:bg-amber-50 hover:text-amber-600 rounded-2xl transition-all">
-                        <span class="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center">🔑</span>
-                        Ganti Password
-                    </button>
-                    <div class="border-t border-gray-50 my-2 pt-2">
-                        <form th:action="@{/auth/logout}" method="POST" id="formLogout">
-                            <button type="button" @click="endShiftAndLogout()" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 rounded-2xl transition-all">
-                                <span class="w-8 h-8 bg-red-100/50 rounded-xl flex items-center justify-center">🚪</span>
-                                Keluar
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Profile Trigger (IKON BULAT + NAMA) -->
-            <div @click="profileMenuOpen = !profileMenuOpen" 
-                 class="flex items-center gap-4 cursor-pointer group hover:bg-white p-2 -m-2 rounded-2xl transition-all">
-                <div class="w-12 h-12 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full flex items-center justify-center text-white font-black text-xl shadow-lg group-hover:scale-110 transition-transform">
-                    <span th:text="${collectorName != null && !collectorName.isEmpty() ? collectorName.substring(0,1) : 'P'}">P</span>
-                </div>
-                <div class="flex-1 overflow-hidden">
-                    <p class="font-black text-gray-900 text-sm truncate group-hover:text-emerald-600 transition-colors" th:text="${collectorName}">Petugas</p>
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full" :class="available ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'"></span>
-                        <p class="text-[10px] font-bold uppercase tracking-tighter" 
-                           :class="available ? 'text-emerald-600' : 'text-gray-400'"
-                           x-text="available ? 'Online' : 'Offline'"></p>
-                    </div>
-                </div>
+            <!-- Field Report Action -->
+            <div class="mt-auto pt-6 border-t border-gray-100">
+                <button type="button" @click="showReportIssueModal = true"
+                        :class="[isSidebarCollapsed ? 'justify-center' : 'gap-4']"
+                        class="w-full flex items-center px-4 py-4 rounded-2xl bg-red-50 text-red-600 font-black text-sm hover:bg-red-100 transition-all group overflow-hidden border border-red-100/50">
+                    <span class="text-xl group-hover:rotate-12 transition-transform">⚠️</span> 
+                    <span x-show="!isSidebarCollapsed" x-transition class="whitespace-nowrap uppercase tracking-widest">Lapor Kendala</span>
+                </button>
             </div>
         </div>
     </aside>
 
+    <!-- Overlay for mobile sidebar -->
+    <div x-show="open" @click="open = false" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[90] lg:hidden"></div>
+
+
     <!-- MAIN CONTENT -->
     <main class="flex-1 overflow-y-auto relative bg-[#F8FAFC]">
         
-        <!-- Header / Top Bar -->
         <header class="h-24 px-10 flex items-center justify-between sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-gray-100/50">
-            <div>
-                <h1 class="text-2xl font-black text-gray-900 tracking-tight" 
-                    x-text="activeTab === 'dashboard' ? 'Dashboard Overview' : (activeTab === 'pending' ? 'Tugas Aktif' : (activeTab === 'history' ? 'Riwayat Konfirmasi' : 'Analitik Performa'))">
-                    Dashboard
-                </h1>
-                <div class="flex items-center gap-4 mt-2">
-                    <div class="flex items-center gap-3 bg-gray-100/50 p-1 rounded-full border border-gray-100">
-                        <button type="button" @click="toggleStatusWithSummary()" 
-                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none"
-                                :class="available ? 'bg-emerald-500' : 'bg-gray-300'">
-                            <span class="inline-block h-4 w-4 transform rounded-full bg-white transition duration-300 status-slider"
-                                  :class="available ? 'translate-x-6' : 'translate-x-1'"></span>
+            <div class="flex items-center gap-6">
+                <!-- Hamburger Menu (Mobile) -->
+                <button type="button" @click="open = !open"
+                        :class="open ? 'burger-btn-dark open' : 'burger-btn-dark'"
+                        class="lg:hidden" title="Buka Navigasi">
+                    <span></span><span></span><span></span>
+                </button>
+
+                <div class="hidden sm:block">
+                    <h1 class="text-2xl font-black text-gray-900 tracking-tight" 
+                        x-text="activeTab === 'dashboard' ? 'Dashboard Overview' : (activeTab === 'pending' ? 'Tugas Aktif' : (activeTab === 'history' ? 'Riwayat Konfirmasi' : (activeTab === 'stats' ? 'Analitik Performa' : 'Rute & Lokasi')))">
+                        Dashboard
+                    </h1>
+                    <div class="flex items-center gap-4 mt-2">
+                        <div class="flex items-center gap-3 bg-gray-100/50 p-1 rounded-full border border-gray-100">
+                            <button type="button" @click="toggleStatusWithSummary()" 
+                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none"
+                                    :class="available ? 'bg-emerald-500' : 'bg-gray-300'">
+                                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition duration-300 status-slider"
+                                      :class="available ? 'translate-x-6' : 'translate-x-1'"></span>
+                            </button>
+                            <span class="text-[10px] font-black uppercase tracking-widest pr-2" 
+                                  :class="available ? 'text-emerald-600' : 'text-gray-400'"
+                                  x-text="available ? 'Available' : 'Busy/Offline'"></span>
+                        </div>
+                        <span class="w-1.5 h-1.5 rounded-full" :class="available ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'"></span>
+                        <button type="button" @click="window.location.reload()" class="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-emerald-600 transition-colors flex items-center gap-1.5 ml-2">
+                            <span>🔄</span> Refresh Data
                         </button>
-                        <span class="text-[10px] font-black uppercase tracking-widest pr-2" 
-                              :class="available ? 'text-emerald-600' : 'text-gray-400'"
-                              x-text="available ? 'Available' : 'Busy/Offline'"></span>
                     </div>
-                    <span class="w-1.5 h-1.5 rounded-full" :class="available ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'"></span>
                 </div>
             </div>
 
@@ -190,7 +155,8 @@
                     </button>
                     <!-- Notif Dropdown -->
                     <div x-show="notifOpen" @click.away="notifOpen = false" x-transition 
-                         class="absolute right-0 mt-4 w-96 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+                         class="absolute right-0 mt-4 w-96 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50"
+                         style="display:none;">
                         <div class="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
                             <h3 class="font-black text-gray-900">Notifikasi</h3>
                             <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Real-time</span>
@@ -216,88 +182,137 @@
                 </div>
 
                 <button type="button" @click="showManualDepositModal = true" class="bg-emerald-600 hover:bg-emerald-700 text-white h-12 px-6 rounded-2xl font-bold shadow-lg shadow-emerald-200 transition-all flex items-center gap-2 active:scale-95">
-                    <span class="text-xl">✍️</span> Catat Manual
+                    <span class="text-xl">✍️</span> <span class="hidden md:inline">Catat Manual</span>
                 </button>
+
+                <!-- Profile Dropdown (Top Right) -->
+                <div class="relative">
+                    <button type="button" @click="profileMenuOpen = !profileMenuOpen" class="flex items-center gap-3 group bg-white border border-gray-100 p-1.5 pr-4 rounded-2xl hover:border-emerald-200 transition-all">
+                        <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md group-hover:scale-105 transition-transform">
+                            <span th:text="${collectorName != null && !collectorName.isEmpty() ? collectorName.substring(0,1) : 'P'}">P</span>
+                        </div>
+                        <div class="text-left hidden lg:block">
+                            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1">Collector</p>
+                            <p class="text-xs font-black text-gray-900" th:text="${collectorName}">Petugas</p>
+                        </div>
+                        <span class="text-gray-400 group-hover:text-emerald-600 transition-colors">▼</span>
+                    </button>
+                    <!-- ... profile menu content continues ... -->
+
+                    <!-- Profile Menu Dropdown -->
+                    <div x-show="profileMenuOpen" 
+                         @click.away="profileMenuOpen = false"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+                         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                         class="absolute right-0 mt-3 w-64 bg-white rounded-[2rem] shadow-2xl border border-gray-100 py-4 z-50 overflow-hidden"
+                         style="display:none;">
+                        
+                        <div class="px-6 py-4 border-b border-gray-50 mb-2">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center font-black">
+                                    <span th:text="${collectorName != null && !collectorName.isEmpty() ? collectorName.substring(0,1) : 'P'}">P</span>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-gray-800 text-sm truncate" th:text="${collectorName}">Nama Petugas</p>
+                                    <p class="text-[10px] text-gray-400 font-bold" th:text="${vehicleNumber}">Plat Kendaraan</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full" :class="available ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'"></span>
+                                <p class="text-[10px] font-bold uppercase tracking-tighter" :class="available ? 'text-emerald-600' : 'text-gray-400'" x-text="available ? 'Online Status' : 'Offline Status'"></p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1 px-2">
+                            <button type="button" @click="showEditProfileModal = true; profileMenuOpen = false" 
+                                    class="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 rounded-2xl transition-all">
+                                <span class="w-8 h-8 bg-gray-50 rounded-xl flex items-center justify-center">👤</span>
+                                Edit Profil
+                            </button>
+                            <div class="border-t border-gray-50 my-2 pt-2">
+                                <form th:action="@{/auth/logout}" method="POST" id="formLogout">
+                                    <button type="button" @click="endShiftAndLogout()" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 rounded-2xl transition-all">
+                                        <span class="w-8 h-8 bg-red-100/50 rounded-xl flex items-center justify-center">🚪</span>
+                                        Keluar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
 
         <div class="p-10">
             <!-- TAB: DASHBOARD OVERVIEW -->
             <div x-show="activeTab === 'dashboard'" x-transition class="space-y-8">
-                <!-- Stats Bento Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div class="glass p-8 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all duration-500 group relative overflow-hidden">
-                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-50 rounded-full group-hover:scale-150 transition-transform duration-700 opacity-50"></div>
-                        <div class="relative z-10">
-                            <p class="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-3">Selesai</p>
-                            <h3 class="text-4xl font-black text-gray-900" th:text="${totalConfirmed}">0</h3>
-                            <p class="text-xs text-gray-400 mt-2 font-medium">Konfirmasi Berhasil</p>
-                        </div>
-                    </div>
-                    <div class="glass p-8 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all duration-500 group relative overflow-hidden">
-                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-50 rounded-full group-hover:scale-150 transition-transform duration-700 opacity-50"></div>
-                        <div class="relative z-10">
-                            <p class="text-xs font-bold text-amber-600 uppercase tracking-widest mb-3">Menunggu</p>
-                            <h3 class="text-4xl font-black text-gray-900" th:text="${pendingDeposits.totalElements}">0</h3>
-                            <p class="text-xs text-gray-400 mt-2 font-medium">Antrian Verifikasi</p>
-                        </div>
-                    </div>
-                    <div class="glass p-8 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all duration-500 group relative overflow-hidden">
-                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-red-50 rounded-full group-hover:scale-150 transition-transform duration-700 opacity-50"></div>
-                        <div class="relative z-10">
-                            <p class="text-xs font-bold text-red-500 uppercase tracking-widest mb-3">Ditolak</p>
-                            <h3 class="text-4xl font-black text-gray-900" th:text="${totalRejected}">0</h3>
-                            <p class="text-xs text-gray-400 mt-2 font-medium">Sampah Tidak Layak</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Feature: Daily Performance & Productivity -->
-                <div class="glass p-10 rounded-[3rem] shadow-sm relative overflow-hidden group">
-                    <div class="absolute right-0 top-0 w-64 h-64 bg-emerald-50/50 rounded-bl-[10rem] -z-10 group-hover:scale-110 transition-transform duration-700"></div>
-                    <div class="flex flex-col lg:flex-row items-center gap-10">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-3 mb-4">
-                                <span class="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Performance Update</span>
-                                <span class="text-xs font-bold text-gray-400" th:text="${#temporals.format(#temporals.createNow(), 'dd MMMM yyyy')}">Tanggal</span>
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                    <!-- Capacity Card -->
+                    <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-100">
+                                <span class="text-xl">🚛</span>
                             </div>
-                            <h2 class="text-3xl font-black text-gray-900 mb-4 tracking-tight">Produktivitas Anda Hari Ini</h2>
-                            <p class="text-gray-500 font-medium leading-relaxed max-w-xl">
-                                Kinerja Anda dihitung berdasarkan rasio konfirmasi setoran dibandingkan penolakan. 
-                                Tingkatkan verifikasi untuk menaikkan skor reputasi Anda di sistem NetraSphere.
-                            </p>
-                            <div class="flex gap-10 mt-8">
-                                <div>
-                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Success Rate</p>
-                                    <p class="text-2xl font-black text-emerald-600" 
-                                       th:text="${totalConfirmed + totalRejected > 0 ? #numbers.formatDecimal((totalConfirmed * 1.0 / (totalConfirmed + totalRejected)) * 100, 1, 0) : '100'} + '%'">0%</p>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Tasks Done</p>
-                                    <p class="text-2xl font-black text-gray-900" th:text="${totalConfirmed}">0</p>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Efficiency</p>
-                                    <p class="text-2xl font-black text-gray-900">High</p>
-                                </div>
+                            <div>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Muatan Kendaraan</p>
+                                <h3 class="text-xl font-black text-gray-900" x-text="currentLoadKg + ' / ' + vehicleCapacityKg + ' kg'">0 / 500 kg</h3>
                             </div>
                         </div>
-                        <div class="w-full lg:w-72 bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-xl shadow-emerald-100/50 text-center relative">
-                            <div class="w-32 h-32 mx-auto mb-6 relative flex items-center justify-center">
-                                <svg class="w-full h-full transform -rotate-90">
-                                    <circle cx="64" cy="64" r="58" stroke="currentColor" stroke-width="8" fill="transparent" class="text-gray-100" />
-                                    <circle cx="64" cy="64" r="58" stroke="currentColor" stroke-width="12" fill="transparent" 
-                                            class="text-emerald-500 transition-all duration-1000" 
-                                            th:attr="stroke-dasharray='364.4 364.4', stroke-dashoffset=${364.4 - (364.4 * (todayWeight >= 100 ? 100 : todayWeight) / 100.0)}" />
-                                </svg>
-                                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span class="text-3xl font-black text-gray-900" th:text="${#numbers.formatDecimal(todayWeight >= 100 ? 100 : todayWeight, 1, 0)} + '%'">0%</span>
-                                    <span class="text-[8px] font-black text-gray-400 uppercase">Target</span>
-                                </div>
-                            </div>
-                            <p class="text-xs font-bold text-gray-800">Beban Hari Ini</p>
-                            <p class="text-[10px] text-gray-400 mt-1">Target harian 100kg</p>
+                        <div class="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
+                            <div class="bg-emerald-500 h-full transition-all duration-1000" :style="'width: ' + (currentLoadKg/vehicleCapacityKg*100) + '%'"></div>
                         </div>
+                        <div class="mt-4 flex items-center justify-between">
+                            <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest" x-text="Math.round(currentLoadKg/vehicleCapacityKg*100) + '% Kapasitas Terisi'"></p>
+                            <button type="button" @click="resetLoad()" class="text-[10px] font-black text-red-500 hover:text-red-600 uppercase tracking-widest transition-colors">Reset</button>
+                        </div>
+                    </div>
+
+                    <!-- Total Weight -->
+                    <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                        <div class="flex items-center gap-4 mb-2">
+                            <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
+                                <span class="text-xl">⚖️</span>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Koleksi</p>
+                                <h3 class="text-xl font-black text-gray-900" th:text="${#numbers.formatDecimal(totalWeightAllTime, 1, 1) + ' kg'}">0 kg</h3>
+                            </div>
+                        </div>
+                        <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Kumulatif Karir</p>
+                    </div>
+
+                    <!-- Eco Impact -->
+                    <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                        <div class="flex items-center gap-4 mb-2">
+                            <div class="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-100">
+                                <span class="text-xl">🍃</span>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">CO2 Offset</p>
+                                <h3 class="text-xl font-black text-gray-900" th:text="${#numbers.formatDecimal(totalWeightAllTime * 0.5, 1, 1) + ' kg'}">0 kg</h3>
+                            </div>
+                        </div>
+                        <p class="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Dampak Lingkungan</p>
+                    </div>
+
+                    <!-- Task Count -->
+                    <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                        <div class="flex items-center gap-4 mb-2">
+                            <div class="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-100">
+                                <span class="text-xl">👥</span>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Warga Dilayani</p>
+                                <h3 class="text-xl font-black text-gray-900" th:text="${totalCitizensServed}">0</h3>
+                            </div>
+                        </div>
+                        <p class="text-[10px] font-bold text-purple-600 uppercase tracking-widest">Jangkauan Komunitas</p>
                     </div>
                 </div>
 
@@ -311,65 +326,46 @@
                         </div>
                     </div>
 
-                    <!-- Side Widget: Gamification & Profile -->
-                    <div class="space-y-8">
+                    <!-- Side Widget: Gamification -->
+                    <div class="space-y-6">
+                        <!-- Daily Progress Card -->
                         <div class="bg-gradient-to-br from-emerald-600 to-emerald-800 p-8 rounded-[3rem] text-white shadow-xl shadow-emerald-200 relative overflow-hidden group">
                             <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full group-hover:scale-125 transition-transform duration-700"></div>
-                            <h3 class="text-xl font-black mb-2 flex items-center gap-3">
-                                <span>🏆</span> Elite Collector
+                            <h3 class="text-xl font-black mb-1 flex items-center gap-3">
+                                <span>🏆</span> Target Harian
                             </h3>
-                            <p class="text-emerald-100 text-sm leading-relaxed mb-6">Terus kumpulkan sampah untuk mendapatkan badge eksklusif minggu ini!</p>
+                            <p class="text-emerald-100 text-xs leading-relaxed mb-5">Target: kumpulkan 100 kg per hari!</p>
                             
-                            <div class="space-y-4 relative z-10">
-                                <div class="flex justify-between text-xs font-bold uppercase tracking-widest">
-                                    <span>Target Progress</span>
-                                    <span th:text="${#numbers.formatDecimal(todayWeight >= 100 ? 100 : todayWeight, 1, 0)} + '%'">0%</span>
+                            <div class="space-y-3 relative z-10">
+                                <div class="flex justify-between items-end">
+                                    <span class="text-3xl font-black" th:text="${#numbers.formatDecimal(todayWeight, 1, 1) + ' kg'}">0 kg</span>
+                                    <span class="text-emerald-200 text-xs font-bold">/ 100 kg</span>
                                 </div>
                                 <div class="h-3 w-full bg-white/20 rounded-full overflow-hidden">
                                     <div class="h-full bg-white rounded-full transition-all duration-1000"
                                          th:style="'width: ' + ${todayWeight >= 100 ? '100' : #numbers.formatDecimal(todayWeight, 1, 0)} + '%;'"></div>
                                 </div>
-                                <p class="text-[10px] text-center italic text-emerald-200">Sisa [[${100 - todayWeight > 0 ? 100 - todayWeight : 0}]]kg lagi untuk mencapai target!</p>
+                                <p class="text-emerald-100 text-[10px] font-bold text-right"
+                                   th:text="${todayWeight >= 100 ? '🎉 Target Tercapai!' : ('Sisa: ' + #numbers.formatDecimal(100 - todayWeight, 1, 1) + ' kg lagi')}">0 kg lagi</p>
                             </div>
                         </div>
-
-                        <!-- Feature C: Vehicle Load Tracker -->
-                        <div class="glass p-8 rounded-[2.5rem] border-emerald-100">
-                            <div class="flex justify-between items-center mb-4">
-                                <h4 class="font-bold text-gray-900 text-sm">Vehicle Load Status</h4>
-                                <button type="button" @click="resetLoad()" class="text-[10px] font-bold text-red-500 hover:underline">Reset Muatan</button>
+                        <!-- Quick Stats Card -->
+                        <div class="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
+                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Statistik Cepat</p>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-bold text-gray-600 flex items-center gap-2">✅ Dikonfirmasi</span>
+                                    <span class="font-black text-emerald-600 text-sm" th:text="${totalConfirmed != null ? totalConfirmed : 0}">0</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-bold text-gray-600 flex items-center gap-2">❌ Ditolak</span>
+                                    <span class="font-black text-red-500 text-sm" th:text="${totalRejected != null ? totalRejected : 0}">0</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-bold text-gray-600 flex items-center gap-2">👥 Warga Dilayani</span>
+                                    <span class="font-black text-blue-500 text-sm" th:text="${totalCitizensServed != null ? totalCitizensServed : 0}">0</span>
+                                </div>
                             </div>
-                            <div class="space-y-4">
-                                <div class="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                                    <span x-text="(currentLoad || 0).toFixed(1) + ' kg'">0 kg</span>
-                                    <span x-text="'Max ' + (maxCapacity || 500) + ' kg'">500 kg</span>
-                                </div>
-                                <div class="h-4 w-full bg-gray-100 rounded-full overflow-hidden border border-gray-50 relative">
-                                    <div class="h-full load-progress rounded-full shadow-inner ease-out"
-                                         :class="currentLoad/maxCapacity > 0.8 ? 'bg-gradient-to-r from-red-500 to-orange-500' : 'bg-gradient-to-r from-emerald-500 to-teal-500'"
-                                         :style="'width: ' + Math.min((currentLoad/maxCapacity)*100, 100) + '%'">
-                                        <!-- Gloss effect -->
-                                        <div class="absolute inset-0 bg-white/20 w-full h-1/2"></div>
-                                    </div>
-                                </div>
-                                <p x-show="currentLoad/maxCapacity > 0.8" class="text-[9px] text-red-500 font-bold italic animate-pulse text-center">
-                                    ⚠️ Kendaraan hampir penuh! Segera lakukan pengosongan.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="glass p-8 rounded-[2.5rem] border-emerald-100">
-                            <h4 class="font-bold text-gray-900 mb-4 text-sm">Availability Status</h4>
-                            <button type="button" 
-                                    @click="toggleStatusWithSummary()" 
-                                    class="w-full flex items-center justify-between p-4 rounded-2xl transition-all border"
-                                    :class="available ? 'bg-emerald-50 text-emerald-700 border-emerald-200 glow-emerald' : 'bg-red-50 text-red-700 border-red-200 glow-red'">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-3 h-3 rounded-full" :class="available ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'"></div>
-                                    <span class="font-bold text-sm" x-text="available ? 'Tersedia' : 'Sibuk'">Status</span>
-                                </div>
-                                <span class="text-xs font-bold underline" x-text="available ? 'Set Offline' : 'Set Online'">Ganti</span>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -382,82 +378,116 @@
                         <h2 class="text-2xl font-black text-gray-900">Daftar Tunggu Konfirmasi</h2>
                         <p class="text-sm text-gray-500 mt-1">Verifikasi setoran sampah dari warga untuk pengiriman poin.</p>
                     </div>
-                    <select x-model="filterCategory" class="bg-white border border-gray-100 rounded-2xl px-6 py-3 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
-                        <option value="ALL">Semua Kategori</option>
-                        <option value="ORGANIC">🍃 Organik</option>
-                        <option value="INORGANIC">♻️ Anorganik</option>
-                        <option value="B3">⚠️ B3</option>
-                    </select>
+                    <div class="flex items-center gap-3">
+                        <!-- Search Bar for Tasks -->
+                        <div class="relative group hidden md:block">
+                            <input type="text" placeholder="Cari nama/kategori..." @input="const q = $el.value.toLowerCase(); document.querySelectorAll('.pending-task-card').forEach(c => c.style.display = (c.innerText.toLowerCase().includes(q) ? 'block' : 'none'))"
+                                   class="bg-white border border-gray-100 rounded-2xl px-5 py-3.5 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all pl-10 w-64 shadow-sm">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                        </div>
+                        <button type="button" @click="sortByDistance()"
+                                class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-black text-xs px-4 py-3.5 rounded-2xl border border-blue-100 transition-all flex items-center gap-2 active:scale-95 shadow-sm">
+                            <span>📍</span> Terdekat
+                        </button>
+                        <div class="bg-amber-50 border border-amber-100 rounded-2xl px-5 py-3.5 flex items-center gap-3 shadow-sm">
+                            <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+                            <span class="text-xs font-black text-amber-700 uppercase tracking-widest" th:text="${pendingDeposits.totalElements + ' Menunggu'}">0 Menunggu</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6 pending-tasks-container">
+                    <!-- No Results Found Placeholder -->
+                    <div id="noTasksFound" class="hidden col-span-full py-16 text-center bg-white rounded-[2.5rem] border border-dashed border-gray-200">
+                        <p class="text-4xl mb-4">🔍</p>
+                        <h4 class="text-lg font-black text-gray-900">Tidak ada hasil ditemukan</h4>
+                        <p class="text-sm text-gray-400 font-bold">Coba cari dengan kata kunci lain.</p>
+                    </div>
                     <div th:each="d : ${pendingDeposits.content}" 
-                         x-show="filterCategory === 'ALL' || filterCategory === '[[${d.categoryType}]]'"
-                         class="glass rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl transition-all border border-gray-100 group relative overflow-hidden"
-                         th:classappend="${d.fromIoT} ? 'border-red-200 bg-red-50/20 glow-red' : 'hover:border-emerald-200'">
+                         class="glass rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl transition-all border border-gray-100 group relative overflow-hidden pending-task-card">
                         
-                        <div th:if="${d.fromIoT}" class="absolute top-0 right-0 bg-red-500 text-white px-6 py-1 rounded-bl-2xl text-[10px] font-black tracking-widest uppercase pulse-iot">
-                            IoT Alert
-                        </div>
-
-                        <div class="flex justify-between items-start mb-8">
+                        <!-- Background accent -->
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-amber-50/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                        
+                        <!-- Header: Avatar + Nama + Status -->
+                        <div class="flex justify-between items-start mb-6">
                             <div class="flex items-center gap-4">
-                                <div class="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center font-black text-xl shadow-inner border border-gray-100"
-                                     th:classappend="${d.fromIoT} ? 'text-red-600 bg-red-50' : 'text-emerald-600 bg-emerald-50'"
-                                     th:text="${d.citizenName != null ? d.citizenName.substring(0,1) : '?'}">C</div>
+                                <div class="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center font-black text-emerald-600 text-xl shadow-sm"
+                                     th:text="${d.citizenName != null ? d.citizenName.substring(0,1).toUpperCase() : '?'}">C</div>
                                 <div>
                                     <h4 class="font-black text-gray-900 text-lg leading-tight" th:text="${d.citizenName}">Warga</h4>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <span class="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full" th:text="${d.citizenPhone != null ? d.citizenPhone : '-'}">Phone</span>
-                                        <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full" th:text="${d.citizenDepositCount + ' Setoran'}">Count</span>
+                                    <div class="flex items-center gap-2 mt-0.5">
+                                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest" th:text="${#temporals.format(d.createdAt, 'dd MMM yyyy · HH:mm')}">12 May 2026</p>
+                                        <span class="distance-badge text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase hidden"></span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="text-right">
-                                <p class="text-xs font-bold text-gray-400 mb-1" th:text="${#temporals.format(d.createdAt, 'dd MMM, HH:mm')}">Time</p>
-                                <span class="bg-amber-100 text-amber-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Pending</span>
+                            <span class="bg-amber-100 text-amber-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Pending</span>
+                        </div>
+
+                        <!-- Detail Info -->
+                        <div class="space-y-3 mb-6">
+                            <!-- Kategori & Berat -->
+                            <div class="flex items-center gap-3 bg-gray-50/80 rounded-2xl px-4 py-3">
+                                <span class="text-lg">♻️</span>
+                                <div class="flex-1">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Kategori</p>
+                                    <p class="text-sm font-black text-gray-900" th:text="${d.categoryName}">Plastik</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Berat</p>
+                                    <p class="text-sm font-black text-emerald-600" th:text="${#numbers.formatDecimal(d.weightKg, 1, 1) + ' kg'}">5.0 kg</p>
+                                </div>
+                            </div>
+
+                            <!-- Lokasi -->
+                            <div class="flex items-center gap-3 bg-gray-50/80 rounded-2xl px-4 py-3" th:if="${d.location != null and !#strings.isEmpty(d.location)}">
+                                <span class="text-lg">📍</span>
+                                <div class="flex-1 overflow-hidden">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Koordinat GPS</p>
+                                    <p class="text-sm font-bold text-gray-700 font-mono" th:text="${d.location}">-6.90, 107.63</p>
+                                </div>
+                                <a th:href="'https://maps.google.com/?q=' + ${d.location}" target="_blank"
+                                   class="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-xl hover:bg-blue-100 transition-all whitespace-nowrap">
+                                    Maps ↗
+                                </a>
+                            </div>
+
+                            <!-- Catatan -->
+                            <div class="flex items-start gap-3 bg-gray-50/80 rounded-2xl px-4 py-3" th:if="${d.notes != null and !#strings.isEmpty(d.notes)}">
+                                <span class="text-lg mt-0.5">📝</span>
+                                <div>
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Catatan Warga</p>
+                                    <p class="text-xs font-bold text-gray-600 mt-0.5 leading-relaxed" th:text="${d.notes}">-</p>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4 mb-8">
-                            <div class="bg-gray-50/50 rounded-2xl p-4 border border-gray-100">
-                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Kategori</p>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-lg" th:switch="${d.categoryType}">
-                                        <span th:case="'ORGANIC'">🍃</span>
-                                        <span th:case="'INORGANIC'">♻️</span>
-                                        <span th:case="'B3'">⚠️</span>
-                                    </span>
-                                    <span class="font-bold text-gray-900" th:text="${d.categoryName}">Plastik</span>
-                                </div>
-                            </div>
-                            <div class="bg-gray-50/50 rounded-2xl p-4 border border-gray-100">
-                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Berat</p>
-                                <p class="font-black text-emerald-600 text-lg" th:text="${#numbers.formatDecimal(d.weightKg, 1, 1)} + ' kg'">0 kg</p>
-                            </div>
+                        <!-- Estimasi Poin -->
+                        <div class="flex items-center justify-between bg-emerald-50 rounded-2xl px-4 py-3 mb-6">
+                            <span class="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Est. Poin Warga</span>
+                            <span class="font-black text-emerald-700 text-sm" th:text="|~${T(java.lang.Math).round(d.weightKg * 10)} pts|">~50 pts</span>
                         </div>
 
                         <!-- Action Buttons -->
                         <div class="flex gap-3">
-                             <button type="button" th:attr="'@click'='confirmDepositWithPhoto({id: \'' + ${d.id} + '\'})'" 
+                            <button type="button" th:data-id="${d.id}" @click="openRejectModal($el.getAttribute('data-id'))"
+                                    class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 font-black py-4 rounded-2xl text-sm transition-all active:scale-95 border border-red-100">
+                                ✕ Tolak
+                            </button>
+                            <button type="button" th:data-id="${d.id}" @click="confirmDepositWithPhoto($el.getAttribute('data-id'))"
                                     class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl text-sm shadow-lg shadow-emerald-200 transition-all active:scale-95">
-                                Konfirmasi & Poin
-                            </button>
-                            <button type="button" th:attr="'@click'='chatOpen = true; selectChatUser({id: \'' + ${d.citizenId} + '\', name: \'' + ${d.citizenName} + '\', role: \'CITIZEN\'})'" 
-                                    class="w-14 h-14 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center hover:bg-blue-100 transition-all border border-blue-100 group">
-                                <span class="group-hover:scale-125 transition-transform">💬</span>
-                            </button>
-                            <button type="button" th:attr="'@click'='openRejectModal(\'' + ${d.id} + '\')'" class="w-14 h-14 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center hover:bg-red-100 transition-all border border-red-100">
-                                &times;
+                                ✓ Konfirmasi
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <div th:if="${pendingDeposits.empty}" class="bg-white rounded-[3rem] p-20 text-center border border-dashed border-gray-200">
-                    <p class="text-5xl mb-6">🎉</p>
-                    <h3 class="text-2xl font-black text-gray-900">Semua Tugas Beres!</h3>
-                    <p class="text-gray-500 mt-2">Tidak ada setoran yang menunggu konfirmasi saat ini.</p>
+                <!-- Empty State -->
+                <div th:if="${pendingDeposits.totalElements == 0}" class="text-center py-24">
+                    <div class="text-6xl mb-6">✅</div>
+                    <h3 class="text-xl font-black text-gray-900 mb-2">Semua Bersih!</h3>
+                    <p class="text-gray-400 font-bold">Tidak ada setoran yang menunggu konfirmasi saat ini.</p>
                 </div>
             </div>
 
@@ -465,98 +495,219 @@
             <div x-show="activeTab === 'history'" x-transition class="space-y-6">
                 <div class="flex items-center justify-between mb-8">
                     <div>
-                        <h2 class="text-2xl font-black text-gray-900">Riwayat Pekerjaan</h2>
-                        <p class="text-sm text-gray-500 mt-1">Data setoran yang telah diproses oleh Anda.</p>
+                        <h2 class="text-2xl font-black text-gray-900">Riwayat Konfirmasi</h2>
+                        <p class="text-sm text-gray-500 mt-1">Laporan pekerjaan yang telah selesai diverifikasi.</p>
                     </div>
-                    <a th:href="@{/collector/export/daily-report}" class="bg-white border border-gray-100 text-gray-700 px-6 py-3 rounded-2xl font-bold shadow-sm hover:bg-gray-50 transition-all flex items-center gap-2">
-                        <span>📥</span> Export PDF
-                    </a>
+                    <div class="flex items-center gap-3">
+                        <!-- Search for History -->
+                        <div class="relative group hidden md:block">
+                            <input type="text" placeholder="Cari riwayat..." @input="const q = $el.value.toLowerCase(); document.querySelectorAll('.history-row').forEach(r => r.style.display = (r.innerText.toLowerCase().includes(q) ? 'table-row' : 'none'))"
+                                   class="bg-white border border-gray-100 rounded-2xl px-5 py-3.5 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all pl-10 w-64 shadow-sm">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <a th:href="@{/collector/export/daily-report}" 
+                               class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-black text-[10px] px-4 py-3.5 rounded-2xl border border-emerald-100 transition-all flex items-center gap-2 active:scale-95 shadow-sm uppercase tracking-wider">
+                                📅 Hari Ini
+                            </a>
+                            <a th:href="@{/collector/export/history}" 
+                               class="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] px-6 py-3.5 rounded-2xl shadow-lg shadow-emerald-100 transition-all flex items-center gap-2 active:scale-95 uppercase tracking-wider">
+                                📥 Semua Riwayat
+                            </a>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="glass rounded-[3rem] overflow-hidden shadow-sm border border-gray-50">
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50/80 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden p-6 lg:p-8">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-50/50">
                             <tr>
-                                <th class="px-8 py-5">Waktu</th>
-                                <th class="px-8 py-5">Warga</th>
-                                <th class="px-8 py-5">Kategori</th>
-                                <th class="px-8 py-5">Berat</th>
-                                <th class="px-8 py-5">Status</th>
-                                <th class="px-8 py-5">Poin</th>
+                                <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tanggal</th>
+                                <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Warga</th>
+                                <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Kategori</th>
+                                <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Berat</th>
+                                <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="text-sm font-bold text-gray-700 divide-y divide-gray-50">
-                            <tr th:each="d : ${historyDeposits.content}" class="hover:bg-gray-50/50 transition-colors">
-                                <td class="px-8 py-6 text-gray-400" th:text="${#temporals.format(d.confirmedAt != null ? d.confirmedAt : d.createdAt, 'dd/MM HH:mm')}">01/01</td>
-                                <td class="px-8 py-6 text-gray-900" th:text="${d.citizenName}">Warga</td>
-                                <td class="px-8 py-6">
-                                    <span class="bg-gray-100 px-3 py-1 rounded-lg text-[10px]" th:text="${d.categoryName}">Plastik</span>
+                        <tbody class="divide-y divide-gray-50">
+                            <tr th:each="d : ${confirmedDeposits}" class="hover:bg-gray-50/50 transition-colors history-row">
+                                <td class="px-8 py-5 text-sm font-bold text-gray-900" th:text="${d.confirmedAt != null ? #temporals.format(d.confirmedAt, 'dd MMM yyyy HH:mm') : '-'}">12 May 2024</td>
+                                <td class="px-8 py-5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-black text-gray-500" th:text="${d.citizenName.substring(0,1)}">C</div>
+                                        <span class="text-sm font-bold text-gray-900" th:text="${d.citizenName}">Warga</span>
+                                    </div>
                                 </td>
-                                <td class="px-8 py-6" th:text="${#numbers.formatDecimal(d.weightKg, 1, 1)} + ' kg'">0 kg</td>
-                                <td class="px-8 py-6">
-                                    <span th:if="${d.status.name() == 'CONFIRMED'}" class="text-emerald-600 flex items-center gap-2">
-                                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Selesai
-                                    </span>
-                                    <span th:if="${d.status.name() == 'REJECTED'}" class="text-red-500 flex items-center gap-2">
-                                        <span class="w-2 h-2 rounded-full bg-red-500"></span> Ditolak
-                                    </span>
+                                <td class="px-8 py-5">
+                                    <span class="text-xs font-bold px-3 py-1 bg-gray-100 text-gray-600 rounded-full" th:text="${d.categoryName}">Plastik</span>
                                 </td>
-                                <td class="px-8 py-6 text-emerald-700 font-black" th:text="'+' + ${#numbers.formatDecimal(d.pointsEarned, 1, 0)}">0</td>
+                                <td class="px-8 py-5 text-sm font-black text-emerald-600" th:text="${d.weightKg + ' kg'}">5.0 kg</td>
+                                <td class="px-8 py-5 text-right">
+                                    <span class="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full">Selesai</span>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
+                    <div th:if="${#lists.isEmpty(confirmedDeposits)}" class="p-20 text-center">
+                        <div class="text-4xl mb-4">📭</div>
+                        <p class="text-gray-400 font-bold">Belum ada riwayat pekerjaan.</p>
+                    </div>
                 </div>
             </div>
 
             <!-- TAB: ANALITIK -->
             <div x-show="activeTab === 'stats'" x-transition class="space-y-8">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="glass p-10 rounded-[3rem] shadow-sm">
-                        <h3 class="text-xl font-black text-gray-900 mb-8">Distribusi Berat Sampah</h3>
-                        <div class="h-80">
-                            <canvas id="weightChart"></canvas>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Trend Chart (2/3) -->
+                    <div class="lg:col-span-2 bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-8">
+                            <h3 class="text-xl font-black text-gray-900">Tren Koleksi (7 Hari Terakhir)</h3>
+                            <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-widest">Weight (kg)</span>
+                        </div>
+                        <div class="h-80 relative">
+                            <canvas id="trendChart"></canvas>
+                            <div th:if="${collectionTrend == null or collectionTrend.isEmpty()}" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
+                                <p class="text-3xl mb-2">📈</p>
+                                <p class="text-xs font-black text-gray-400 uppercase tracking-widest">Belum ada tren data</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="glass p-10 rounded-[3rem] shadow-sm">
-                        <h3 class="text-xl font-black text-gray-900 mb-8">Frekuensi Setoran Kategori</h3>
+
+                    <!-- Efficiency Card (1/3) -->
+                    <div class="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm flex flex-col justify-between relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-32 h-32 bg-emerald-50 rounded-full group-hover:scale-110 transition-transform duration-700"></div>
+                        <div class="relative z-10">
+                            <h3 class="text-xl font-black text-gray-900 mb-2">Success Rate</h3>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Akurasi Verifikasi</p>
+                        </div>
+                        <div class="relative flex flex-col items-center justify-center my-6">
+                            <div class="text-6xl font-black text-emerald-600"
+                                 th:text="${efficiencyRate != null ? #numbers.formatDecimal(efficiencyRate, 1, 1) + '%' : '—'}">—%</div>
+                            <div class="flex items-center gap-4 mt-4 text-[10px] font-bold">
+                                <span class="text-emerald-600" th:text="${totalConfirmed != null ? totalConfirmed + ' ✓' : '0 ✓'}">0 ✓</span>
+                                <span class="text-gray-300">|</span>
+                                <span class="text-red-400" th:text="${totalRejected != null ? totalRejected + ' ✗' : '0 ✗'}">0 ✗</span>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-gray-400 font-bold text-center">Dari total setoran yang Anda proses.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm relative overflow-hidden">
+                        <h3 class="text-xl font-black text-gray-900 mb-8">Distribusi Kategori</h3>
+                        <div class="h-80 relative">
+                            <canvas id="weightChart"></canvas>
+                            <div th:if="${categoryStats == null or categoryStats.isEmpty()}" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
+                                <p class="text-3xl mb-2">🍩</p>
+                                <p class="text-xs font-black text-gray-400 uppercase tracking-widest">Data Kosong</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm">
+                        <h3 class="text-xl font-black text-gray-900 mb-8">Volume Setoran</h3>
                         <div class="h-80">
                             <canvas id="countChart"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- Feature D: Collector Leaderboard -->
-                <div class="glass p-10 rounded-[3rem] shadow-sm">
-                    <div class="flex items-center gap-4 mb-10">
-                        <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-2xl shadow-inner">🏆</div>
+                <!-- NEW: LEADERBOARD SECTION -->
+                <div class="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm">
+                    <div class="flex items-center justify-between mb-10">
                         <div>
-                            <h3 class="text-xl font-black text-gray-900">Leaderboard Petugas</h3>
-                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Ranking Berdasarkan Konfirmasi</p>
+                            <h3 class="text-2xl font-black text-gray-900">Leaderboard Petugas</h3>
+                            <p class="text-sm text-gray-500 mt-1">Peringkat kolektor berdasarkan total berat sampah yang dikumpulkan.</p>
+                        </div>
+                        <div class="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-xl">
+                            <span class="text-lg">🔥</span>
+                            <span class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Global Ranking</span>
                         </div>
                     </div>
+                    
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div th:each="rank, iter : ${leaderboard}" 
-                             class="p-6 rounded-[2rem] border transition-all flex items-center justify-between group"
-                             th:classappend="${rank[0].email == #authentication.name} ? 'bg-emerald-50 border-emerald-200 glow-emerald' : 'bg-white border-gray-100 hover:border-emerald-100'">
+                        <div th:each="item, iter : ${leaderboard}" class="relative p-6 rounded-3xl border border-gray-50 transition-all hover:border-emerald-100 group"
+                             th:classappend="${iter.index < 3 ? 'bg-emerald-50/20' : 'bg-white'}">
                             <div class="flex items-center gap-4">
-                                <div class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm"
-                                     th:classappend="${iter.index == 0} ? 'bg-amber-400 text-white shadow-lg shadow-amber-200' : ( ${iter.index == 1} ? 'bg-slate-300 text-white' : (${iter.index == 2} ? 'bg-orange-300 text-white' : 'bg-gray-100 text-gray-400'))"
-                                     th:text="${iter.count}">1</div>
-                                <div>
-                                    <p class="font-bold text-sm text-gray-900" th:text="${rank[0].name}">Nama</p>
-                                    <p class="text-[10px] text-gray-400 font-bold" th:text="${rank[0].assignedArea}">Area</p>
+                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center font-black shadow-sm"
+                                     th:classappend="${iter.index == 0 ? 'bg-yellow-400 text-white' : (iter.index == 1 ? 'bg-gray-300 text-white' : (iter.index == 2 ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-400'))}"
+                                     th:text="${iter.index + 1}">1</div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="font-bold text-gray-900 truncate" th:text="${item[0]}">Collector Name</h4>
+                                    <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest" th:text="${#numbers.formatDecimal(item[1], 1, 1) + ' kg total'}">0 kg total</p>
                                 </div>
+                                <div th:if="${iter.index == 0}" class="text-2xl animate-bounce">👑</div>
                             </div>
-                            <div class="text-right">
-                                <p class="text-lg font-black text-emerald-600" th:text="${rank[1]}">0</p>
-                                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Confirmed</p>
-                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- TAB: MAP -->
+            <div x-show="activeTab === 'map'" x-transition class="space-y-6">
+                <div class="bg-white p-4 rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden h-[600px] relative">
+                    <div id="fullMap" class="w-full h-full rounded-[2.5rem] z-10"></div>
+                    
+                    <!-- Floating Legend -->
+                    <div class="absolute bottom-8 left-8 z-[20] flex gap-2">
+                        <div class="bg-white/80 backdrop-blur px-4 py-2 rounded-2xl border border-white shadow-xl flex items-center gap-2">
+                            <div class="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                            <span class="text-[10px] font-black uppercase tracking-widest">Active Bin</span>
+                        </div>
+                        <div class="bg-white/80 backdrop-blur px-4 py-2 rounded-2xl border border-white shadow-xl flex items-center gap-2">
+                            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                            <span class="text-[10px] font-black uppercase tracking-widest">Full Bin</span>
+                        </div>
+                        <div class="bg-white/80 backdrop-blur px-4 py-2 rounded-2xl border border-white shadow-xl flex items-center gap-2">
+                            <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                            <span class="text-[10px] font-black uppercase tracking-widest">Pickup Task</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
+
+    <!-- MODAL: KONFIRMASI DENGAN FOTO -->
+    <!-- MODAL: KONFIRMASI DENGAN FOTO -->
+    <div x-show="showConfirmDepositModal" style="display:none;" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-gray-900/60 backdrop-blur-sm" x-transition>
+        <div @click.away="showConfirmDepositModal = false" class="bg-white rounded-[3rem] shadow-2xl w-full max-w-md p-10 relative overflow-hidden">
+            <div class="absolute right-0 top-0 w-32 h-32 bg-emerald-50 rounded-bl-full -z-10"></div>
+            
+            <div class="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg shadow-emerald-100">
+                <span class="text-3xl">📸</span>
+            </div>
+            
+            <h3 class="text-2xl font-black text-gray-900 mb-2">Konfirmasi Koleksi</h3>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">Validasi bukti pengambilan sampah</p>
+            
+            <form :action="'/collector/deposit/' + confirmingDeposit + '/confirm'" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+                
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Upload Bukti Foto (Wajib)</label>
+                    <div class="relative group">
+                        <input type="file" name="file" required accept="image/*"
+                               class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
+                    <p class="text-[10px] font-bold text-emerald-800 leading-relaxed">
+                        Dengan mengonfirmasi, Anda menyatakan bahwa berat sampah sesuai dengan data yang diinput dan telah diterima oleh petugas.
+                    </p>
+                </div>
+
+                <div class="flex gap-4">
+                    <button type="button" @click="showConfirmDepositModal = false" class="flex-1 py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-black rounded-2xl transition-all active:scale-95 text-xs uppercase tracking-widest">
+                        Batal
+                    </button>
+                    <button type="submit" class="flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg shadow-emerald-200 transition-all active:scale-95 text-xs uppercase tracking-widest">
+                        Konfirmasi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- MODAL: EDIT PROFIL -->
     <div x-show="showEditProfileModal" style="display:none;" class="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-gray-900/60 backdrop-blur-sm" x-transition>
@@ -589,48 +740,6 @@
         </div>
     </div>
 
-    <!-- MODAL: KONFIRMASI DENGAN FOTO -->
-    <div x-show="showConfirmDepositModal" style="display:none;" class="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-gray-900/60 backdrop-blur-sm" x-transition>
-        <div @click.away="showConfirmDepositModal = false" class="bg-white rounded-[3rem] shadow-2xl w-full max-w-md p-10 text-center">
-            <!-- FEATURE B: PICKUP PROOF PHOTO -->
-            <form :action="'/collector/deposit/' + confirmingDeposit?.id + '/confirm'" method="POST" class="space-y-6">
-                <div class="bg-gray-50 rounded-[2.5rem] p-6 border border-dashed border-gray-300 relative group overflow-hidden">
-                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">📸 Bukti Penjemputan (Wajib)</label>
-                    
-                    <div class="w-full aspect-video bg-white rounded-2xl border-2 border-gray-100 flex items-center justify-center text-gray-300 relative">
-                        <template x-if="!pickupProofUrl">
-                            <div class="text-center">
-                                <span class="text-4xl block mb-2">📷</span>
-                                <p class="text-[10px] font-bold">Ambil Foto Sampah</p>
-                            </div>
-                        </template>
-                        <template x-if="pickupProofUrl">
-                            <img :src="pickupProofUrl" class="w-full h-full object-cover">
-                        </template>
-                        
-                        <!-- CSRF Token (Required for POST since we use dynamic :action) -->
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                        
-                        <!-- Hidden Input to store the URL -->
-                        <input type="hidden" name="photoUrl" :value="pickupProofUrl">
-                    </div>
-
-                    <div class="flex gap-2 mt-4 justify-center">
-                        <button type="button" @click="simulatePhotoCapture()" class="bg-emerald-600 text-white px-4 py-2 rounded-full text-[10px] font-black uppercase shadow-lg shadow-emerald-100">Ambil Foto</button>
-                        <button type="button" @click="pickupProofUrl = ''" class="bg-gray-200 text-gray-600 px-4 py-2 rounded-full text-[10px] font-black uppercase">Reset</button>
-                    </div>
-                </div>
-                
-                <div class="flex gap-4">
-                    <button type="button" @click="showConfirmDepositModal = false" class="flex-1 font-bold text-gray-400">Batal</button>
-                    <button type="submit" class="flex-1 bg-emerald-600 text-white font-black py-4 rounded-[2rem] shadow-lg shadow-emerald-100 transition-all active:scale-95">
-                        <span x-text="pickupProofUrl ? '✅ Konfirmasi' : '✅ Konfirmasi (Tanpa Foto)'"></span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- MODAL: MANUAL DEPOSIT -->
     <div x-show="showManualDepositModal" style="display:none;" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-gray-900/60 backdrop-blur-sm" x-transition>
         <div @click.away="showManualDepositModal = false" class="bg-white rounded-[3rem] shadow-2xl w-full max-w-xl p-10 relative overflow-hidden">
@@ -642,12 +751,18 @@
 
             <form th:action="@{/collector/deposit/manual}" method="POST" id="manualDepositRealForm" class="space-y-6"
                   @submit.prevent="if(!manualDepositForm.citizenId || !manualDepositForm.categoryId || !manualDepositForm.weightKg) { Swal.fire({ icon: 'warning', title: 'Data belum lengkap!' }); } else { $el.submit(); }">
-                <!-- Search Citizen -->
-                <div class="relative">
-                    <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Cari Warga (Nama/NIK)</label>
-                    <input type="text" x-model="searchCitizenQuery" @input.debounce.500ms="searchCitizens()" 
-                           placeholder="Ketik minimal 3 huruf..."
-                           class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                    <div class="relative group">
+                        <input type="text" x-model="searchCitizenQuery" @input.debounce.500ms="searchCitizens()" 
+                               placeholder="Ketik minimal 3 huruf..."
+                               class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all pl-12">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                        
+                        <!-- QR Scan Button Overlay -->
+                        <button type="button" @click="startQRScanner()" 
+                                class="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-100 text-emerald-600 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-200 transition-all flex items-center gap-2">
+                            <span>📷</span> Scan QR
+                        </button>
+                    </div>
                     
                     <div x-show="citizenSearchResults.length > 0" class="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 max-h-48 overflow-y-auto">
                         <template x-for="c in citizenSearchResults" :key="c.id">
@@ -657,7 +772,6 @@
                             </div>
                         </template>
                     </div>
-                </div>
 
                 <input type="hidden" name="citizenId" :value="manualDepositForm.citizenId">
 
@@ -722,376 +836,25 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Server Data Bridge -->
     <script th:inline="javascript">
-        /*<![CDATA[*/
-        const mapData = /*[[${pendingDeposits?.content}]]*/ [];
-        const categoryStats = /*[[${categoryStats}]]*/ [];
-
-        function collectorDashboard() {
-            return {
-                activeTab: 'dashboard',
-                open: false,
-                chatInitialized: false,
-                filterCategory: 'ALL',
-                darkMode: localStorage.getItem('darkMode') === 'true',
-                notification: { 
-                    show: /*[[${successMessage != null || errorMessage != null}]]*/ false, 
-                    message: /*[[${successMessage != null ? successMessage : (errorMessage != null ? errorMessage : '')}]]*/ '', 
-                    type: /*[[${successMessage != null ? 'success' : 'error'}]]*/ '' 
-                },
-                lastKnownPendingCount: /*[[${pendingDeposits != null ? pendingDeposits.totalElements : 0}]]*/ 0,
-                showPasswordModal: false,
-                showEditProfileModal: false,
-                profileMenuOpen: false,
-                showManualDepositModal: false,
-                showConfirmDepositModal: false,
-                showRejectModal: false,
-                confirmingDeposit: null,
-                rejectingDepositId: null,
-                rejectReason: '',
-                manualDepositForm: { citizenId: '', categoryId: '', weightKg: '', notes: '' },
-                editProfileForm: { 
-                    name: /*[[${collectorName}]]*/ '', 
-                    phone: /*[[${phone}]]*/ '', 
-                    vehicleNumber: /*[[${vehicleNumber}]]*/ '',
-                    maxCapacityKg: /*[[${maxCapacity}]]*/ 500
-                },
-                citizenSearchResults: [],
-                searchCitizenQuery: '',
-                isSearching: false,
-                lightbox: { show: false, img: '' },
-                pickupProofUrl: '', // Feature B
-
-                // Internal Chat State
-                chatOpen: false,
-                chatUsers: [],
-                selectedChatUser: null,
-                chatHistory: [],
-                chatMessageInput: '',
-                unreadChatCount: 0,
-                
-                // Inventory tracking
-                currentLoad: /*[[${currentLoad != null ? currentLoad : 0}]]*/ 0,
-                maxCapacity: /*[[${maxCapacity != null ? maxCapacity : 500}]]*/ 500,
-                available: /*[[${available != null ? available : false}]]*/ false,
-
-                init() {
-                    if(this.darkMode) document.body.classList.add('dark-mode');
-                    this.initMap();
-                    if(this.notification.show) {
-                        Swal.fire({
-                            toast: true,
-                            position: 'top-end',
-                            icon: this.notification.type,
-                            title: this.notification.message,
-                            showConfirmButton: false,
-                            timer: 4000,
-                            timerProgressBar: true
-                        });
-                    }
-                    this.startPolling();
-                    this.fetchUnreadChatCount();
-                    setInterval(() => this.fetchUnreadChatCount(), 10000);
-                    
-                    // Auto-init charts after data load
-                    setTimeout(() => this.initChart(), 500);
-                },
-                
-                toggleDarkMode() {
-                    this.darkMode = !this.darkMode;
-                    localStorage.setItem('darkMode', this.darkMode);
-                    document.body.classList.toggle('dark-mode');
-                },
-
-                async fetchChatUsers() {
-                    try {
-                        const res = await fetch('/internal/chat/users');
-                        if (res.ok) {
-                            this.chatUsers = await res.json();
-                            console.log("CHAT DEBUG: Loaded users:", this.chatUsers);
-                        } else {
-                            console.error("CHAT DEBUG: Failed to fetch users, status:", res.status);
-                        }
-                    } catch(e) {
-                        console.error("CHAT DEBUG: Error fetching users:", e);
-                    }
-                },
-
-                async selectChatUser(user) {
-                    this.selectedChatUser = user;
-                    await this.fetchChatHistory();
-                    this.fetchChatUsers(); // Refresh badges in list
-                    this.fetchUnreadChatCount(); // Refresh main floating badge
-                    this.$nextTick(() => { this.scrollToBottom(); });
-                    // Poll for new messages every 5 seconds if chat is open
-                    if(!this.chatPollInterval) {
-                        this.chatPollInterval = setInterval(() => {
-                            if(this.selectedChatUser) this.fetchChatHistory();
-                        }, 5000);
-                    }
-                },
-
-                async fetchChatHistory() {
-                    if(!this.selectedChatUser) return;
-                    try {
-                        const res = await fetch('/internal/chat/history/' + this.selectedChatUser.id);
-                        this.chatHistory = await res.json();
-                    } catch(e) { console.error(e); }
-                },
-
-                async sendChatMessage() {
-                    if(!this.chatMessageInput.trim() || !this.selectedChatUser) return;
-                    const payload = { receiverId: this.selectedChatUser.id, message: this.chatMessageInput };
-                    try {
-                        const res = await fetch('/internal/chat/send', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        if(res.ok) {
-                            this.chatMessageInput = '';
-                            await this.fetchChatHistory();
-                            this.$nextTick(() => { this.scrollToBottom(); });
-                        }
-                    } catch(e) { console.error(e); }
-                },
-
-                simulatePhotoCapture() {
-                    // Simulasi mengambil foto (menggunakan gambar placeholder random)
-                    const randomId = Math.floor(Math.random() * 1000);
-                    this.pickupProofUrl = `https://picsum.photos/seed/${randomId}/600/400`;
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Foto Berhasil Diambil!',
-                        text: 'Bukti penjemputan telah tersimpan.',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
-                },
-
-                confirmDepositWithPhoto(deposit) {
-                    this.confirmingDeposit = deposit;
-                    this.pickupProofUrl = ''; // Reset untuk tiap deposit baru
-                    this.showConfirmDepositModal = true;
-                },
-
-                openRejectModal(id) {
-                    this.rejectingDepositId = id;
-                    this.rejectReason = '';
-                    this.showRejectModal = true;
-                },
-
-                async submitReject() {
-                    if(!this.rejectReason.trim()) {
-                        Swal.fire({ icon: 'warning', title: 'Mohon isi alasan penolakan' });
-                        return;
-                    }
-                    try {
-                        const res = await fetch(`/collector/deposit/${this.rejectingDepositId}/reject`, {
-                            method: 'POST',
-                            headers: { 
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                                ...this.getCsrfHeaders() 
-                            },
-                            body: new URLSearchParams({ reason: this.rejectReason })
-                        });
-                        if(res.ok) {
-                            window.location.reload();
-                        }
-                    } catch(e) { console.error(e); }
-                },
-
-                // Helper: ambil CSRF token dari meta tag untuk AJAX POST
-                getCsrfHeaders() {
-                    const token = document.querySelector('meta[name="_csrf"]')?.content || '';
-                    const header = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
-                    return { [header]: token };
-                },
-
-                async fetchUnreadChatCount() {
-                    try {
-                        // ChatController ada di /internal/chat — BUKAN /api/chat
-                        const res = await fetch('/internal/chat/unread');
-                        const data = await res.json();
-                        this.unreadChatCount = data.unreadCount;
-                    } catch(e) {}
-                },
-
-                scrollToBottom() {
-                    const el = this.$refs.chatBox;
-                    if(el) el.scrollTop = el.scrollHeight;
-                },
-                
-                initMap() {
-                    if(document.getElementById('map')) {
-                        const map = L.map('map').setView([-6.8975, 107.6350], 15);
-                        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                            attribution: '&copy; OpenStreetMap contributors'
-                        }).addTo(map);
-                        
-                        mapData.forEach(d => {
-                            if(d.location) {
-                                const coords = d.location.split(',');
-                                if(coords.length === 2 && !isNaN(coords[0])) {
-                                    L.marker([parseFloat(coords[0]), parseFloat(coords[1])])
-                                     .addTo(map)
-                                     .bindPopup(`<b>${d.citizenName}</b><br>${d.categoryName} (${d.weightKg}kg)`);
-                                }
-                            }
-                        });
-                        
-                        this.$watch('activeTab', (value) => {
-                            if (value === 'dashboard') {
-                                setTimeout(() => map.invalidateSize(), 200);
-                            }
-                        });
-                    }
-                },
-
-                async searchCitizens() {
-                    if (this.searchCitizenQuery.length < 3) {
-                        this.citizenSearchResults = [];
-                        return;
-                    }
-                    try {
-                        const response = await fetch('/collector/search-citizens?q=' + encodeURIComponent(this.searchCitizenQuery));
-                        this.citizenSearchResults = await response.json();
-                    } catch (error) { console.error(error); }
-                },
-
-                selectCitizen(citizen) {
-                    this.manualDepositForm.citizenId = citizen.id;
-                    this.searchCitizenQuery = citizen.name;
-                    this.citizenSearchResults = [];
-                },
-
-                submitManualDeposit() {
-                    if (!this.manualDepositForm.citizenId || !this.manualDepositForm.categoryId || !this.manualDepositForm.weightKg) {
-                        Swal.fire({ icon: 'warning', title: 'Data belum lengkap!' });
-                        return;
-                    }
-                    document.getElementById('manualDepositRealForm').submit();
-                },
-
-                async markRead(id, element) {
-                    try {
-                        // Sertakan CSRF header agar Spring Security tidak menolak request POST ini
-                        const res = await fetch('/collector/notifications/' + id + '/read', {
-                            method: 'POST',
-                            headers: { ...this.getCsrfHeaders() }
-                        });
-                        if (res.ok) {
-                            element.classList.remove('bg-emerald-50/10');
-                            const dot = element.querySelector('.w-2.h-2.rounded-full.bg-emerald-500');
-                            if(dot) dot.remove();
-                        }
-                    } catch (error) { console.error(error); }
-                },
-
-                startPolling() {
-                    setInterval(async () => {
-                        try {
-                            const res = await fetch('/collector/pending-count');
-                            if (res.ok) {
-                                const data = await res.json();
-                                if (data.count > this.lastKnownPendingCount) {
-                                    window.location.reload();
-                                }
-                            }
-                        } catch(e) {}
-                    }, 30000);
-                },
-
-                initChart() {
-                    // Debug
-                    console.log("CHART DEBUG: Category Stats:", categoryStats);
-                    if (!categoryStats || categoryStats.length === 0) {
-                        console.warn("CHART DEBUG: No stats data found.");
-                        return;
-                    }
-                    const labels = categoryStats.map(s => s[0]);
-                    const weights = categoryStats.map(s => s[1]);
-                    const counts = categoryStats.map(s => s[2]);
-                    const colors = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
-
-                    new Chart(document.getElementById('weightChart'), {
-                        type: 'doughnut',
-                        data: {
-                            labels: labels,
-                            datasets: [{ data: weights, backgroundColor: colors, borderWidth: 0 }]
-                        },
-                        options: { responsive: true, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
-                    });
-
-                    new Chart(document.getElementById('countChart'), {
-                        type: 'bar',
-                        data: {
-                            labels: labels,
-                            datasets: [{ label: 'Jumlah Setoran', data: counts, backgroundColor: '#10b981', borderRadius: 10 }]
-                        },
-                        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-                    });
-                },
-
-                endShiftAndLogout() {
-                    Swal.fire({
-                        title: 'Selesaikan Shift?',
-                        text: "Anda akan keluar dari sesi kerja.",
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonColor: '#10b981',
-                        confirmButtonText: 'Ya, Logout'
-                    }).then((result) => {
-                        if (result.isConfirmed) document.getElementById('formLogout').submit();
-                    });
-                },
-
-                async toggleStatusWithSummary() {
-                    try {
-                        const res = await fetch('/collector/toggle-availability', {
-                            method: 'POST',
-                            headers: { ...this.getCsrfHeaders() }
-                        });
-                        if (res.ok) {
-                            this.available = !this.available;
-                        }
-                    } catch (error) { console.error(error); }
-                },
-
-                async resetLoad() {
-                    const result = await Swal.fire({
-                        title: 'Kosongkan Muatan?',
-                        text: "Data muatan kendaraan akan di-reset ke 0.",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#ef4444',
-                        confirmButtonText: 'Ya, Kosongkan'
-                    });
-                    
-                    if (result.isConfirmed) {
-                        try {
-                            const res = await fetch('/collector/reset-load', {
-                                method: 'POST',
-                                headers: { ...this.getCsrfHeaders() }
-                            });
-                            if (res.ok) {
-                                this.currentLoad = 0; // Triggers smooth slide animation
-                                Swal.fire({
-                                    toast: true,
-                                    position: 'top-end',
-                                    icon: 'success',
-                                    title: 'Muatan telah dikosongkan',
-                                    showConfirmButton: false,
-                                    timer: 3000
-                                });
-                            }
-                        } catch (error) { console.error(error); }
-                    }
-                }
-            }
-        }
-        /*]]>*/
+        window.collectorServerData = {
+            mapData: /*[[${pendingDeposits?.content}]]*/ [],
+            categoryStats: /*[[${categoryStats}]]*/ [],
+            collectionTrend: /*[[${collectionTrend}]]*/ [],
+            notificationShow: /*[[${successMessage != null || errorMessage != null}]]*/ false,
+            notificationMessage: /*[[${successMessage != null ? successMessage : (errorMessage != null ? errorMessage : '')}]]*/ '',
+            notificationType: /*[[${successMessage != null ? 'success' : 'error'}]]*/ '',
+            pendingCount: /*[[${pendingDeposits != null ? pendingDeposits.totalElements : 0}]]*/ 0,
+            collectorName: /*[[${collectorName}]]*/ '',
+            phone: /*[[${phone}]]*/ '',
+            vehicleNumber: /*[[${vehicleNumber}]]*/ '',
+            maxCapacity: /*[[${maxCapacity != null ? maxCapacity : 500}]]*/ 500,
+            currentLoad: /*[[${currentLoad != null ? currentLoad : 0}]]*/ 0,
+            available: /*[[${available != null ? available : false}]]*/ false
+        };
     </script>
+    <script th:src="@{/js/collector.js}"></script>
 
     <!-- FLOATING CHAT BUTTON -->
     <div class="fixed bottom-10 right-10 z-[60] flex flex-col items-end gap-4">
@@ -1121,6 +884,15 @@
                 <button type="button" @click="selectedChatUser = null; fetchChatUsers()" x-show="selectedChatUser" class="text-xs bg-white/20 px-3 py-1.5 rounded-xl hover:bg-white/30 transition-colors">Kembali</button>
             </div>
 
+            <!-- Chat Search (Only shown in user list mode) -->
+            <div x-show="!selectedChatUser" class="px-6 py-4 bg-white border-b border-gray-50">
+                <div class="relative group">
+                    <input type="text" x-model.debounce.200ms="chatSearchQuery" placeholder="Cari nama warga..." 
+                           class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all pl-9">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+                </div>
+            </div>
+
             <!-- Chat Body: User List -->
             <div x-show="!selectedChatUser" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50/30">
                 <template x-if="chatUsers.length === 0">
@@ -1129,7 +901,7 @@
                         <p class="text-xs font-bold">Belum ada pengguna lain<br>untuk dihubungi.</p>
                     </div>
                 </template>
-                <template x-for="user in chatUsers" :key="user.id">
+                <template x-for="user in filteredChatUsers" :key="user.id || user.email">
                     <div @click="selectChatUser(user)" class="p-4 bg-white hover:bg-emerald-50/50 rounded-3xl cursor-pointer border border-gray-100 hover:border-emerald-200 transition-all flex items-center justify-between group">
                         <div class="flex items-center gap-3">
                             <div class="relative">
@@ -1186,5 +958,54 @@
     <!-- Hidden Toggle Form -->
     <form th:id="formToggleAvail" th:action="@{/collector/toggle-availability}" method="POST" class="hidden"></form>
 
+    <!-- MODAL: QR SCANNER -->
+    <div x-show="showQRScanner" class="fixed inset-0 z-[150] flex items-center justify-center p-6" style="display:none;">
+        <div @click="stopQRScanner()" class="absolute inset-0 bg-gray-900/60 backdrop-blur-md"></div>
+        <div class="relative bg-white rounded-[3rem] shadow-2xl w-full max-w-lg overflow-hidden animate-zoom-in">
+            <div class="p-8 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">📷</span>
+                    <h3 class="font-black text-xl text-gray-900 uppercase tracking-tighter">Scan ID Warga</h3>
+                </div>
+                <button @click="stopQRScanner()" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-400 hover:text-red-500 transition-all">✕</button>
+            </div>
+            <div class="p-8">
+                <div id="reader" class="rounded-[2rem] overflow-hidden border-4 border-emerald-100 bg-gray-50"></div>
+                <p class="text-center text-xs font-bold text-gray-400 mt-6 uppercase tracking-widest">Arahkan kamera ke QR Code di aplikasi warga</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: LAPOR KENDALA -->
+    <div x-show="showReportIssueModal" class="fixed inset-0 z-[150] flex items-center justify-center p-6" style="display:none;">
+        <div @click="showReportIssueModal = false" class="absolute inset-0 bg-gray-900/60 backdrop-blur-md"></div>
+        <div class="relative bg-white rounded-[3rem] shadow-2xl w-full max-w-lg overflow-hidden animate-zoom-in">
+            <form th:action="@{/collector/report-issue}" method="POST">
+                <div class="p-8 border-b border-gray-50 flex items-center justify-between bg-red-50/30">
+                    <div class="flex items-center gap-3 text-red-600">
+                        <span class="text-2xl">⚠️</span>
+                        <h3 class="font-black text-xl uppercase tracking-tighter">Lapor Kendala Lapangan</h3>
+                    </div>
+                    <button type="button" @click="showReportIssueModal = false" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-400 hover:text-red-500 transition-all">✕</button>
+                </div>
+                <div class="p-8 space-y-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Judul Laporan</label>
+                        <input type="text" name="title" required placeholder="Contoh: Bin #10 Rusak" 
+                               class="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-gray-100 font-bold focus:ring-2 focus:ring-red-500 outline-none transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Deskripsi Detail</label>
+                        <textarea name="description" required rows="4" placeholder="Jelaskan kendala yang ditemukan..."
+                                  class="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-gray-100 font-bold focus:ring-2 focus:ring-red-500 outline-none transition-all"></textarea>
+                    </div>
+                    <input type="hidden" name="location" x-model="currentGeoLocation">
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-5 rounded-2xl text-sm shadow-xl shadow-red-200 transition-all active:scale-95 uppercase tracking-widest">
+                        Kirim Laporan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

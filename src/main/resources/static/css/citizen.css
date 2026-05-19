@@ -1,0 +1,379 @@
+/* ============================================================
+   CITIZEN DASHBOARD — Complete Stylesheet
+   Menggantikan semua style yang hilang saat refactoring dari index.html
+   ============================================================ */
+
+/* ── Google Font ────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+/* ── Base ────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #f9fafb;
+    min-height: 100vh;
+}
+
+[x-cloak] { display: none !important; }
+
+/* ── CARD Component ─────────────────────────────────────────── */
+.card {
+    background: white;
+    border-radius: 2rem;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Wallet Gradient Card ───────────────────────────────────── */
+.wallet-gradient {
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 30%, #047857 65%, #059669 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.wallet-gradient::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    right: -60px;
+    width: 220px;
+    height: 220px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* ── Glassmorphism ──────────────────────────────────────────── */
+.glass {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    padding: 0.75rem 1rem;
+}
+
+/* ── Status Badges ──────────────────────────────────────────── */
+.badge-confirmed {
+    background-color: #d1fae5;
+    color: #065f46;
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 9999px;
+    display: inline-block;
+}
+
+.badge-pending {
+    background-color: #fef3c7;
+    color: #92400e;
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 9999px;
+    display: inline-block;
+}
+
+.badge-rejected {
+    background-color: #fee2e2;
+    color: #991b1b;
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 9999px;
+    display: inline-block;
+}
+
+/* ── Form Input Field ───────────────────────────────────────── */
+.input-field {
+    background-color: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+    color: #111827;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+}
+
+.input-field:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+/* ── Scrollbar Utilities ────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Animations ─────────────────────────────────────────────── */
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+    animation: slideUp 0.35s ease-out both;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+
+/* ── Phase 2: Right Sidebar Layout ─────────────────────────── */
+.dashboard-container {
+    display: flex;
+    flex-direction: row;
+    min-height: calc(100vh - 64px);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    min-width: 0; /* prevent flex overflow */
+}
+
+.right-sidebar {
+    width: 380px;
+    flex-shrink: 0;
+    background: white;
+    border-left: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    overflow: hidden;
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                padding 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.25s ease;
+}
+
+.right-sidebar.sidebar-collapsed {
+    width: 0;
+    padding: 0;
+    border-left: none;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.right-sidebar::after {
+    content: '';
+    display: block;
+    min-height: 12rem;
+    flex-shrink: 0;
+}
+
+/* ── Citizen Sidebar Toggle Button ────────────────── */
+.citizen-sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    flex-direction: column;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+}
+.citizen-sidebar-toggle:hover {
+    background: #ecfdf5;
+    border-color: #6ee7b7;
+}
+.citizen-sidebar-toggle span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: #4b5563;
+    border-radius: 2px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+}
+.citizen-sidebar-toggle.open span:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+    background: #10b981;
+}
+.citizen-sidebar-toggle.open span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0);
+}
+.citizen-sidebar-toggle.open span:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+    background: #10b981;
+}
+
+
+/* ── Sidebar Nav Card ───────────────────────────────────────── */
+.nav-card {
+    background: #f9fafb;
+    border-radius: 1.5rem;
+    padding: 0.5rem;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 1.25rem;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: #4b5563;
+    transition: all 0.2s;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.nav-item:hover {
+    background: white;
+    color: #10b981;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.nav-item.active {
+    background: #10b981;
+    color: white;
+    box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.25);
+}
+
+/* ── Sidebar Impact Card ────────────────────────────────────── */
+.impact-card {
+    background: #0f172a;
+    border-radius: 2rem;
+    padding: 2rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.impact-card::after {
+    content: '';
+    position: absolute;
+    bottom: -50px;
+    right: -50px;
+    width: 150px;
+    height: 150px;
+    background: #10b981;
+    filter: blur(80px);
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+/* ── Mobile Bottom Nav ─────────────────────────────────────── */
+.mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    display: flex;
+    justify-content: space-around;
+    padding: 0.75rem 0.5rem;
+    z-index: 50;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    color: #9ca3af;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+}
+
+.mobile-nav-item.active {
+    color: #10b981;
+}
+
+.mobile-nav-item span:first-child {
+    font-size: 1.25rem;
+}
+
+/* ── Responsive Breakpoints ─────────────────────────────────── */
+@media (max-width: 1024px) {
+    .dashboard-container {
+        flex-direction: column;
+    }
+
+    .right-sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        height: 100vh !important;
+        width: 320px !important;
+        z-index: 120 !important;
+        background: white !important;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15) !important;
+        transform: translateX(100%);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        display: flex !important;
+        padding-top: 5rem !important; /* Space for easier closing or header */
+    }
+
+    .right-sidebar:not(.sidebar-collapsed) {
+        transform: translateX(0) !important;
+    }
+
+    .main-content {
+        padding: 1.5rem;
+        padding-bottom: 5rem; /* space for mobile bottom nav */
+    }
+}
+
+@media (max-width: 640px) {
+    .main-content {
+        padding: 1rem;
+        padding-bottom: 5rem;
+    }
+}
+
+/* ── Leaflet Map Override ───────────────────────────────────── */
+.leaflet-container {
+    border-radius: 1.5rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* ── SweetAlert2 Override ───────────────────────────────────── */
+.swal2-popup {
+    border-radius: 1.5rem !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+.swal2-confirm {
+    border-radius: 0.75rem !important;
+}
+
+.swal2-cancel {
+    border-radius: 0.75rem !important;
+}
