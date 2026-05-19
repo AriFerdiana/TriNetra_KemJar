@@ -11,6 +11,7 @@ public class WalletResponse {
     private double totalPoints;
     private double redeemedPoints;
     private double availablePoints;
+    private Double targetPoints;
 
     public WalletResponse() {}
 
@@ -26,6 +27,7 @@ public class WalletResponse {
         public WalletResponseBuilder totalPoints(double p) { r.totalPoints = p; return this; }
         public WalletResponseBuilder redeemedPoints(double p) { r.redeemedPoints = p; return this; }
         public WalletResponseBuilder availablePoints(double p) { r.availablePoints = p; return this; }
+        public WalletResponseBuilder targetPoints(Double p) { r.targetPoints = p; return this; }
         public WalletResponse build() { return r; }
     }
 
@@ -41,6 +43,14 @@ public class WalletResponse {
     public void setRedeemedPoints(double redeemedPoints) { this.redeemedPoints = redeemedPoints; }
     public double getAvailablePoints() { return availablePoints; }
     public void setAvailablePoints(double availablePoints) { this.availablePoints = availablePoints; }
+    public Double getTargetPoints() { return targetPoints; }
+    public void setTargetPoints(Double targetPoints) { this.targetPoints = targetPoints; }
+
+    public int getProgressToTarget() {
+        if (targetPoints == null || targetPoints <= 0) return 0;
+        double progress = (totalPoints / targetPoints) * 100;
+        return progress > 100 ? 100 : (int) progress;
+    }
 
     /** Level gamifikasi berdasarkan total poin */
     public String getLevel() {
@@ -58,5 +68,32 @@ public class WalletResponse {
         if (totalPoints >= 1000)  return (int) ((totalPoints - 1000) / 40);
         if (totalPoints >= 500)   return (int) ((totalPoints - 500) / 5);
         return (int) (totalPoints / 5);
+    }
+
+    /** Ikon badge sesuai level saat ini */
+    public String getBadgeIcon() {
+        if (totalPoints >= 10000) return "🏆";
+        if (totalPoints >= 5000)  return "🥇";
+        if (totalPoints >= 1000)  return "🥈";
+        if (totalPoints >= 500)   return "🥉";
+        return "🌱";
+    }
+
+    /** Nama level berikutnya */
+    public String getNextLevel() {
+        if (totalPoints >= 10000) return "Level Tertinggi";
+        if (totalPoints >= 5000)  return "Platinum Eco Warrior";
+        if (totalPoints >= 1000)  return "Gold Eco Hero";
+        if (totalPoints >= 500)   return "Silver Green Star";
+        return "Bronze Recycler";
+    }
+
+    /** Sisa poin menuju level berikutnya */
+    public long getPointsToNextLevel() {
+        if (totalPoints >= 10000) return 0;
+        if (totalPoints >= 5000)  return (long) (10000 - totalPoints);
+        if (totalPoints >= 1000)  return (long) (5000  - totalPoints);
+        if (totalPoints >= 500)   return (long) (1000  - totalPoints);
+        return (long) (500 - totalPoints);
     }
 }

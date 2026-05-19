@@ -1,6 +1,7 @@
 package com.smartwaste.config;
 
-import lombok.RequiredArgsConstructor;
+import com.smartwaste.service.AdminLogService;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,7 +14,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,6 +34,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  *   <li><b>REST API (/api/**)</b>: Stateless JWT via Bearer token</li>
  * </ul>
  */
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -40,10 +42,14 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
+    private final AdminLogService adminLogService;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserDetailsService userDetailsService) {
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter, 
+                          UserDetailsService userDetailsService,
+                          AdminLogService adminLogService) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
+        this.adminLogService = adminLogService;
     }
 
     // ==================== Filter Chain 1: REST API (Stateless JWT) ====================
@@ -111,8 +117,17 @@ public class SecurityConfig {
                 .usernameParameter("email")
                 .passwordParameter("password")
                 .successHandler((request, response, authentication) -> {
-                    // Redirect berdasarkan role setelah login sukses
+                    // Log aksi login untuk ADMIN
                     var authorities = authentication.getAuthorities();
+                    boolean isAdmin = authorities.stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+                    if (isAdmin) {
+                        String ip = request.getRemoteAddr();
+                        adminLogService.log("LOGIN_ADMIN",
+                            "Admin login: " + authentication.getName(), ip);
+                    }
+
+                    // Redirect berdasarkan role setelah login sukses
                     String redirectUrl = "/";
                     for (var authority : authorities) {
                         redirectUrl = switch (authority.getAuthority()) {
@@ -136,7 +151,14 @@ public class SecurityConfig {
                 .permitAll()
             )
             .exceptionHandling(ex -> ex
-                .accessDeniedPage("/auth/access-denied")
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    if (accessDeniedException instanceof org.springframework.security.web.csrf.MissingCsrfTokenException
+                            || accessDeniedException instanceof org.springframework.security.web.csrf.InvalidCsrfTokenException) {
+                        response.sendRedirect(request.getContextPath() + "/auth/login?timeout=true");
+                    } else {
+                        response.sendRedirect(request.getContextPath() + "/auth/access-denied");
+                    }
+                })
             );
 
         return http.build();

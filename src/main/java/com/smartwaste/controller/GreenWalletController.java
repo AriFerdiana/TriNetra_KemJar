@@ -5,17 +5,18 @@ import com.smartwaste.dto.response.ApiResponse;
 import com.smartwaste.dto.response.WalletResponse;
 import com.smartwaste.service.GreenWalletService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
 @RequestMapping("/api/v1/wallet")
+@Tag(name = "Green Wallet", description = "Manajemen poin gamifikasi warga")
+@SecurityRequirement(name = "bearerAuth")
 public class GreenWalletController {
 
     private final GreenWalletService walletService;
@@ -39,7 +40,7 @@ public class GreenWalletController {
             @Valid @RequestBody RedeemPointsRequest request,
             Authentication auth) {
         com.smartwaste.entity.PointRedemption response = walletService.requestRedemption(
-                auth.getName(), request.getPoints(), request.getDescription());
+                auth.getName(), request.getPoints(), request.getDescription(), request.getRewardItemId());
         return ResponseEntity.ok(ApiResponse.success(
                 String.format("Penukaran %.0f poin berhasil diajukan dan berstatus PENDING!", request.getPoints()), response));
     }

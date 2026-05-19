@@ -9,6 +9,7 @@ import java.util.Map;
 public class ReportSummaryResponse {
 
     private long totalCitizens;
+    private long activeCitizensCount;
     private long totalCollectors;
     private long totalDeposits;
     private long pendingDeposits;
@@ -17,6 +18,8 @@ public class ReportSummaryResponse {
     private double totalPointsDistributed;
     private Map<String, Double> weightByCategory;
     private Map<String, Long> depositsByCategory;
+    private Map<String, Long> levelDistribution;
+    private long rejectedDeposits;
     private List<MonthlyStatDto> monthlyStats;
     private List<CitizenLeaderboard> topCitizens;
 
@@ -29,6 +32,7 @@ public class ReportSummaryResponse {
     public static class ReportSummaryResponseBuilder {
         private ReportSummaryResponse r = new ReportSummaryResponse();
         public ReportSummaryResponseBuilder totalCitizens(long c) { r.totalCitizens = c; return this; }
+        public ReportSummaryResponseBuilder activeCitizensCount(long c) { r.activeCitizensCount = c; return this; }
         public ReportSummaryResponseBuilder totalCollectors(long c) { r.totalCollectors = c; return this; }
         public ReportSummaryResponseBuilder totalDeposits(long c) { r.totalDeposits = c; return this; }
         public ReportSummaryResponseBuilder pendingDeposits(long c) { r.pendingDeposits = c; return this; }
@@ -37,6 +41,8 @@ public class ReportSummaryResponse {
         public ReportSummaryResponseBuilder totalPointsDistributed(double p) { r.totalPointsDistributed = p; return this; }
         public ReportSummaryResponseBuilder weightByCategory(Map<String, Double> m) { r.weightByCategory = m; return this; }
         public ReportSummaryResponseBuilder depositsByCategory(Map<String, Long> m) { r.depositsByCategory = m; return this; }
+        public ReportSummaryResponseBuilder levelDistribution(Map<String, Long> m) { r.levelDistribution = m; return this; }
+        public ReportSummaryResponseBuilder rejectedDeposits(long c) { r.rejectedDeposits = c; return this; }
         public ReportSummaryResponseBuilder monthlyStats(List<MonthlyStatDto> l) { r.monthlyStats = l; return this; }
         public ReportSummaryResponseBuilder topCitizens(List<CitizenLeaderboard> l) { r.topCitizens = l; return this; }
         public ReportSummaryResponse build() { return r; }
@@ -44,6 +50,8 @@ public class ReportSummaryResponse {
 
     public long getTotalCitizens() { return totalCitizens; }
     public void setTotalCitizens(long totalCitizens) { this.totalCitizens = totalCitizens; }
+    public long getActiveCitizensCount() { return activeCitizensCount; }
+    public void setActiveCitizensCount(long activeCitizensCount) { this.activeCitizensCount = activeCitizensCount; }
     public long getTotalCollectors() { return totalCollectors; }
     public void setTotalCollectors(long totalCollectors) { this.totalCollectors = totalCollectors; }
     public long getTotalDeposits() { return totalDeposits; }
@@ -60,6 +68,10 @@ public class ReportSummaryResponse {
     public void setWeightByCategory(Map<String, Double> weightByCategory) { this.weightByCategory = weightByCategory; }
     public Map<String, Long> getDepositsByCategory() { return depositsByCategory; }
     public void setDepositsByCategory(Map<String, Long> depositsByCategory) { this.depositsByCategory = depositsByCategory; }
+    public Map<String, Long> getLevelDistribution() { return levelDistribution; }
+    public void setLevelDistribution(Map<String, Long> levelDistribution) { this.levelDistribution = levelDistribution; }
+    public long getRejectedDeposits() { return rejectedDeposits; }
+    public void setRejectedDeposits(long rejectedDeposits) { this.rejectedDeposits = rejectedDeposits; }
     public List<MonthlyStatDto> getMonthlyStats() { return monthlyStats; }
     public void setMonthlyStats(List<MonthlyStatDto> monthlyStats) { this.monthlyStats = monthlyStats; }
     public List<CitizenLeaderboard> getTopCitizens() { return topCitizens; }

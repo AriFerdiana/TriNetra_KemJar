@@ -36,16 +36,17 @@ public interface CollectorRepository extends JpaRepository<Collector, String> {
      * Menggunakan correlated subquery agar enum-safe dan kompatibel dengan MySQL strict mode.
      * Hanya menampilkan collector aktif (bukan perangkat IoT).
      */
-    @Query("SELECT c, (SELECT COUNT(d) FROM WasteDeposit d " +
-           "           WHERE d.collector = c " +
-           "           AND d.status = com.smartwaste.entity.enums.DepositStatus.CONFIRMED) AS confirmedCount " +
+    @Query("SELECT c.name, (SELECT COALESCE(SUM(d.weightKg), 0) FROM WasteDeposit d " +
+           "                WHERE d.collector = c " +
+           "                AND d.status = com.smartwaste.entity.enums.DepositStatus.CONFIRMED) AS totalWeight " +
            "FROM Collector c " +
            "WHERE c.active = true AND c.iotDevice = false " +
-           "ORDER BY confirmedCount DESC")
+           "ORDER BY totalWeight DESC")
     List<Object[]> getCollectorLeaderboard();
 
-    @Query("SELECT c FROM Collector c WHERE c.active = true AND c.iotDevice = false AND " +
-           "(LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+    @Query("SELECT c FROM Collector c WHERE c.iotDevice = false AND " +
+           "(:active IS NULL OR c.active = :active) AND " +
+           "(:keyword IS NULL OR LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            " LOWER(c.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<Collector> searchCollectors(@org.springframework.data.repository.query.Param("keyword") String keyword, org.springframework.data.domain.Pageable pageable);
+    Page<Collector> searchCollectors(@Param("keyword") String keyword, @Param("active") Boolean active, Pageable pageable);
 }

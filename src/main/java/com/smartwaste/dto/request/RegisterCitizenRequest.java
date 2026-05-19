@@ -8,7 +8,7 @@ import jakarta.validation.constraints.*;
 public class RegisterCitizenRequest {
 
     @NotBlank(message = "Nama tidak boleh kosong")
-    @Size(min = 2, max = 100, message = "Nama harus antara 2-100 karakter")
+    @Pattern(regexp = "^[a-zA-Z\\s]{3,100}$", message = "Nama hanya boleh mengandung huruf dan spasi (minimal 3 karakter)")
     private String name;
 
     @NotBlank(message = "Email tidak boleh kosong")
@@ -16,18 +16,26 @@ public class RegisterCitizenRequest {
     private String email;
 
     @NotBlank(message = "Password tidak boleh kosong")
-    @Size(min = 8, message = "Password minimal 8 karakter")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", 
+             message = "Password minimal 8 karakter dengan kombinasi huruf besar, kecil, angka, dan karakter spesial (@$!%*?&)")
     private String password;
 
-    @Pattern(regexp = "^[0-9]{10,13}$", message = "Format nomor telepon tidak valid (10-13 digit)")
+    @NotBlank(message = "Nomor telepon tidak boleh kosong")
+    @Pattern(regexp = "^\\+62[0-9]{9,13}$", message = "Format nomor telepon tidak valid (harus diawali +62 dan diikuti 9-13 digit angka)")
     private String phone;
 
-    @Size(min = 16, max = 16, message = "NIK harus tepat 16 digit")
+    @NotBlank(message = "NIK tidak boleh kosong")
     @Pattern(regexp = "^[0-9]{16}$", message = "NIK harus berupa 16 digit angka")
     private String nik;
 
+    @NotBlank(message = "Alamat tidak boleh kosong")
     private String address;
+
+    @NotBlank(message = "RT/RW tidak boleh kosong")
+    @Pattern(regexp = "^[0-9]{3}/[0-9]{3}$", message = "Format RT/RW harus 000/000")
     private String rtRw;
+
+    @NotBlank(message = "Kelurahan tidak boleh kosong")
     private String kelurahan;
 
     public RegisterCitizenRequest() {}

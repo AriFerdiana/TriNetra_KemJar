@@ -18,10 +18,14 @@ public class RedeemPointsRequest {
     @Size(max = 500, message = "Deskripsi maksimal 500 karakter")
     private String description;
 
+    private String rewardItemId;
+
     public RedeemPointsRequest() {}
 
     public Double getPoints() { return points; }
     public void setPoints(Double points) { this.points = points; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public String getRewardItemId() { return rewardItemId; }
+    public void setRewardItemId(String rewardItemId) { this.rewardItemId = rewardItemId; }
 }

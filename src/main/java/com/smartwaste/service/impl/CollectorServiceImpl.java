@@ -9,8 +9,6 @@ import com.smartwaste.repository.CollectorRepository;
 import com.smartwaste.repository.UserRepository;
 import com.smartwaste.repository.WasteDepositRepository;
 import com.smartwaste.service.CollectorService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -72,8 +70,8 @@ public class CollectorServiceImpl implements CollectorService {
     }
 
     @Override
-    public Page<CollectorResponse> searchCollectors(String keyword, Pageable pageable) {
-        return collectorRepository.searchCollectors(keyword, pageable).map(this::mapToResponse);
+    public Page<CollectorResponse> searchCollectors(String keyword, Boolean active, Pageable pageable) {
+        return collectorRepository.searchCollectors(keyword, active, pageable).map(this::mapToResponse);
     }
 
     @Override
@@ -117,6 +115,15 @@ public class CollectorServiceImpl implements CollectorService {
     @Override
     public long countActive() {
         return collectorRepository.countByActiveTrue();
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(String collectorId, String newPassword) {
+        Collector collector = collectorRepository.findById(collectorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Collector", "id", collectorId));
+        collector.setPassword(passwordEncoder.encode(newPassword));
+        collectorRepository.save(collector);
     }
 
     private CollectorResponse mapToResponse(Collector c) {

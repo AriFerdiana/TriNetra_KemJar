@@ -5,10 +5,7 @@ import com.smartwaste.dto.response.ApiResponse;
 import com.smartwaste.dto.response.WasteDepositResponse;
 import com.smartwaste.service.WasteDepositService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -17,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 /**
  * Controller untuk manajemen setoran sampah.
@@ -24,6 +23,8 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/v1/deposits")
+@Tag(name = "Waste Deposit", description = "Transaksi setor sampah")
+@SecurityRequirement(name = "bearerAuth")
 public class WasteDepositController {
 
     private final WasteDepositService depositService;
@@ -65,7 +66,7 @@ public class WasteDepositController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Page<WasteDepositResponse> deposits = depositService.getAllDeposits(
-                null, null, null, PageRequest.of(page, size, Sort.by("createdAt").descending()));
+                null, null, null, null, PageRequest.of(page, size, Sort.by("createdAt").descending()));
         return ResponseEntity.ok(ApiResponse.success("Data berhasil diambil.", deposits));
     }
 

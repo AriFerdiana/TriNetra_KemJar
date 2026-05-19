@@ -6,7 +6,6 @@ import com.smartwaste.entity.enums.WasteType;
 import com.smartwaste.exception.ResourceNotFoundException;
 import com.smartwaste.repository.WasteCategoryRepository;
 import com.smartwaste.service.WasteCategoryService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,6 +65,17 @@ public class WasteCategoryServiceImpl implements WasteCategoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("WasteCategory", "id", id));
         cat.setActive(!cat.isActive());
         categoryRepository.save(cat);
+    }
+
+    @Override
+    @Transactional
+    public void delete(String id) {
+        WasteCategory cat = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("WasteCategory", "id", id));
+        if (!cat.getDeposits().isEmpty()) {
+            throw new IllegalStateException("Kategori tidak dapat dihapus karena sudah memiliki riwayat transaksi setoran. Silakan nonaktifkan kategori ini sebagai gantinya.");
+        }
+        categoryRepository.delete(cat);
     }
 
     private WasteCategoryResponse mapToResponse(WasteCategory cat) {

@@ -26,12 +26,13 @@ public interface CitizenRepository extends JpaRepository<Citizen, String> {
     /** Cari semua warga aktif dengan pagination. */
     Page<Citizen> findByActiveTrue(Pageable pageable);
 
-    /** Full-text search warga berdasarkan nama, email, atau NIK. */
-    @Query("SELECT c FROM Citizen c WHERE c.active = true AND " +
-           "(LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+    /** Full-text search warga berdasarkan nama, email, atau NIK dengan filter status. */
+    @Query("SELECT c FROM Citizen c WHERE " +
+           "(:active IS NULL OR c.active = :active) AND " +
+           "(:keyword IS NULL OR LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            " LOWER(c.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            " c.nik LIKE CONCAT('%', :keyword, '%'))")
-    Page<Citizen> searchCitizens(@Param("keyword") String keyword, Pageable pageable);
+    Page<Citizen> searchCitizens(@Param("keyword") String keyword, @Param("active") Boolean active, Pageable pageable);
 
     /** Total jumlah warga aktif (untuk dashboard admin). */
     long countByActiveTrue();

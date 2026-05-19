@@ -12,8 +12,6 @@ import com.smartwaste.repository.CitizenRepository;
 import com.smartwaste.repository.GreenWalletRepository;
 import com.smartwaste.repository.UserRepository;
 import com.smartwaste.service.AuthService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;

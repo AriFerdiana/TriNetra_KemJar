@@ -7,4 +7,5 @@ import com.smartwaste.dto.response.ReportSummaryResponse;
  */
 public interface ReportService {
     ReportSummaryResponse getSummary();
+    java.util.Map<String, Object> getCitizenEcoStats(String citizenEmail);
 }

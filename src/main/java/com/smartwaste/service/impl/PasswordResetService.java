@@ -4,8 +4,6 @@ import com.smartwaste.entity.PasswordResetToken;
 import com.smartwaste.entity.User;
 import com.smartwaste.repository.PasswordResetTokenRepository;
 import com.smartwaste.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;

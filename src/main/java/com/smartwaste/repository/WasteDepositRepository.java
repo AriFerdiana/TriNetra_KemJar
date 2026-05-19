@@ -86,4 +86,54 @@ public interface WasteDepositRepository extends JpaRepository<WasteDeposit, Stri
 
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"citizen", "category"})
     Page<WasteDeposit> findByStatusAndCreatedAtBetween(DepositStatus status, java.time.LocalDateTime start, java.time.LocalDateTime end, Pageable pageable);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"citizen", "category"})
+    @Query("SELECT d FROM WasteDeposit d WHERE (:search IS NULL OR :search = '' OR LOWER(d.citizen.name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "AND (:status IS NULL OR d.status = :status) " +
+           "AND (cast(:startDate as timestamp) IS NULL OR d.createdAt >= :startDate) " +
+           "AND (cast(:endDate as timestamp) IS NULL OR d.createdAt <= :endDate)")
+    Page<WasteDeposit> findWithFilters(@Param("search") String search, 
+                                       @Param("status") DepositStatus status, 
+                                       @Param("startDate") java.time.LocalDateTime startDate, 
+                                       @Param("endDate") java.time.LocalDateTime endDate, 
+                                       Pageable pageable);
+
+    /** Statistik per kategori untuk citizen tertentu */
+    @Query("SELECT d.category.name, SUM(d.weightKg), COUNT(d) " +
+           "FROM WasteDeposit d WHERE d.citizen = :citizen AND d.status = com.smartwaste.entity.enums.DepositStatus.CONFIRMED " +
+           "GROUP BY d.category.name")
+    List<Object[]> findCategoryStatsByCitizen(@Param("citizen") Citizen citizen);
+
+    /** Statistik bulanan untuk citizen tertentu */
+    @Query("SELECT FUNCTION('DATE_FORMAT', d.createdAt, '%Y-%m') AS monthYear, " +
+           "COUNT(d) AS depositCount, SUM(d.weightKg) AS totalWeight, SUM(d.pointsEarned) AS totalPoints " +
+           "FROM WasteDeposit d WHERE d.citizen = :citizen AND d.status = com.smartwaste.entity.enums.DepositStatus.CONFIRMED " +
+           "GROUP BY FUNCTION('DATE_FORMAT', d.createdAt, '%Y-%m') " +
+           "ORDER BY monthYear ASC")
+    List<Object[]> findMonthlyStatsByCitizen(@Param("citizen") Citizen citizen);
+
+    /** Analytics: Tren harian collector (7 hari terakhir) */
+    @Query("SELECT FUNCTION('DATE', d.confirmedAt) AS collectDate, SUM(d.weightKg) " +
+           "FROM WasteDeposit d WHERE d.collector = :collector AND d.status = com.smartwaste.entity.enums.DepositStatus.CONFIRMED " +
+           "AND d.confirmedAt >= :sevenDaysAgo " +
+           "GROUP BY FUNCTION('DATE', d.confirmedAt) " +
+           "ORDER BY collectDate ASC")
+    List<Object[]> findDailyTrendByCollector(@Param("collector") com.smartwaste.entity.Collector collector, @Param("sevenDaysAgo") java.time.LocalDateTime sevenDaysAgo);
+
+    /** Analytics: Total berat kumulatif collector */
+    @Query("SELECT COALESCE(SUM(d.weightKg), 0) FROM WasteDeposit d WHERE d.collector = :collector AND d.status = com.smartwaste.entity.enums.DepositStatus.CONFIRMED")
+    double sumTotalWeightByCollector(@Param("collector") com.smartwaste.entity.Collector collector);
+
+    /** Analytics: Total poin disalurkan oleh collector */
+    @Query("SELECT COALESCE(SUM(d.pointsEarned), 0) FROM WasteDeposit d WHERE d.collector = :collector AND d.status = com.smartwaste.entity.enums.DepositStatus.CONFIRMED")
+    double sumTotalPointsByCollector(@Param("collector") com.smartwaste.entity.Collector collector);
+
+    /** Analytics: Jumlah warga unik dilayani oleh collector */
+    @Query("SELECT COUNT(DISTINCT d.citizen) FROM WasteDeposit d WHERE d.collector = :collector AND d.status = com.smartwaste.entity.enums.DepositStatus.CONFIRMED")
+    long countUniqueCitizensByCollector(@Param("collector") com.smartwaste.entity.Collector collector);
+
+    List<WasteDeposit> findByCollectorAndStatusOrderByConfirmedAtDesc(com.smartwaste.entity.Collector collector, DepositStatus status);
+
+    @Query("SELECT COUNT(DISTINCT d.citizen) FROM WasteDeposit d WHERE d.createdAt >= :since")
+    long countDistinctCitizensSince(@Param("since") java.time.LocalDateTime since);
 }

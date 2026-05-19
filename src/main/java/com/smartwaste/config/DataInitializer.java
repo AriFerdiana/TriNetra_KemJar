@@ -4,8 +4,7 @@ import com.smartwaste.entity.*;
 import com.smartwaste.entity.enums.DepositStatus;
 import com.smartwaste.entity.enums.WasteType;
 import com.smartwaste.repository.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -27,6 +26,7 @@ import java.util.Random;
  * </ul>
  */
 @Component
+@SuppressWarnings("null")
 public class DataInitializer implements CommandLineRunner {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DataInitializer.class);
@@ -37,6 +37,7 @@ public class DataInitializer implements CommandLineRunner {
     private final GreenWalletRepository   greenWalletRepository;
     private final WasteCategoryRepository wasteCategoryRepository;
     private final WasteDepositRepository  wasteDepositRepository;
+    private final RewardItemRepository    rewardItemRepository;
     private final PasswordEncoder         passwordEncoder;
 
     public DataInitializer(UserRepository userRepository,
@@ -45,6 +46,7 @@ public class DataInitializer implements CommandLineRunner {
                            GreenWalletRepository greenWalletRepository,
                            WasteCategoryRepository wasteCategoryRepository,
                            WasteDepositRepository wasteDepositRepository,
+                           RewardItemRepository rewardItemRepository,
                            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.collectorRepository = collectorRepository;
@@ -52,6 +54,7 @@ public class DataInitializer implements CommandLineRunner {
         this.greenWalletRepository = greenWalletRepository;
         this.wasteCategoryRepository = wasteCategoryRepository;
         this.wasteDepositRepository = wasteDepositRepository;
+        this.rewardItemRepository = rewardItemRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -63,6 +66,7 @@ public class DataInitializer implements CommandLineRunner {
         initCitizen();
         initWasteCategories();
         initWasteDeposits();
+        initRewardItems();
         System.out.println(">>> SEEDER DEBUG: Initialization complete.");
         System.out.println(">>> SEEDER DEBUG: Total Users: "     + userRepository.count());
         System.out.println(">>> SEEDER DEBUG: Total Collectors: " + collectorRepository.count());
@@ -176,7 +180,10 @@ public class DataInitializer implements CommandLineRunner {
     // ==================== Kategori Sampah ====================
 
     private void initWasteCategories() {
-        if (wasteCategoryRepository.count() == 0) {
+        if (wasteCategoryRepository.count() < 13) {
+            // Kita hapus dulu agar seeder bisa mengupdate data baru jika ada penambahan
+            wasteCategoryRepository.deleteAllInBatch();
+            
             WasteCategory[] categories = {
                 new WasteCategory("Sisa Makanan & Dapur",
                     "Sampah organik dari sisa makanan, sayuran, dan buah-buahan",
@@ -184,6 +191,9 @@ public class DataInitializer implements CommandLineRunner {
                 new WasteCategory("Daun & Ranting",
                     "Sampah organik dari kebun seperti daun kering dan ranting kecil",
                     WasteType.ORGANIC, 3.0, "🍃"),
+                new WasteCategory("Minyak Jelantah",
+                    "Minyak goreng bekas pakai yang dapat diolah menjadi biodiesel",
+                    WasteType.ORGANIC, 10.0, "🛢️"),
                 new WasteCategory("Botol Plastik (PET)",
                     "Botol minuman plastik jenis PET yang dapat didaur ulang",
                     WasteType.INORGANIC, 12.0, "♻️"),
@@ -193,15 +203,30 @@ public class DataInitializer implements CommandLineRunner {
                 new WasteCategory("Kaleng Logam",
                     "Kaleng minuman, kaleng makanan dari aluminium atau baja",
                     WasteType.INORGANIC, 15.0, "🥫"),
+                new WasteCategory("Kaca & Beling",
+                    "Botol kaca, toples, dan limbah kaca lainnya",
+                    WasteType.INORGANIC, 6.0, "🍷"),
+                new WasteCategory("Logam Non-Aluminium",
+                    "Tembaga, kuningan, perunggu, dan logam berharga lainnya",
+                    WasteType.INORGANIC, 40.0, "🧱"),
+                new WasteCategory("Tekstil & Pakaian",
+                    "Pakaian bekas, kain perca, dan limbah tekstil lainnya",
+                    WasteType.INORGANIC, 7.0, "👕"),
                 new WasteCategory("Baterai Bekas",
                     "Baterai AA, AAA, baterai tombol, atau baterai lithium bekas — limbah B3",
                     WasteType.B3, 30.0, "🔋"),
+                new WasteCategory("Obat Kadaluwarsa",
+                    "Obat-obatan yang sudah lewat masa berlaku — limbah B3 medis rumah tangga",
+                    WasteType.B3, 20.0, "💊"),
+                new WasteCategory("Lampu TL / Neon",
+                    "Lampu neon, TL, atau bohlam yang mengandung merkuri — limbah B3",
+                    WasteType.B3, 25.0, "💡"),
                 new WasteCategory("Elektronik & E-Waste",
-                    "Handphone rusak, charger bekas, PCB, lampu LED/neon — limbah B3 elektronik",
+                    "Handphone rusak, charger bekas, PCB, lampu LED — limbah B3 elektronik",
                     WasteType.B3, 50.0, "💻")
             };
-            for (WasteCategory cat : categories) wasteCategoryRepository.save(cat);
-            log.info("✅ 7 kategori sampah berhasil dibuat");
+            for (var cat : categories) wasteCategoryRepository.save(cat);
+            log.info("✅ 13 kategori sampah berhasil dibuat (Update Baru)");
         }
     }
 
@@ -302,6 +327,43 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         log.info("✅ {} data dummy WasteDeposit berhasil dibuat (150 CONFIRMED + 10 PENDING).", created);
+    }
+
+    // ==================== Katalog Hadiah ====================
+    private void initRewardItems() {
+        if (rewardItemRepository.count() > 0) return;
+
+        String[] icons = {
+            "🍚", "🛢️", "🍬", "🧂", "🥚", "🧅", "🧄", "🌶️", "🍅", "🍜",
+            "☕", "🍵", "🥛", "🧀", "🍯", "🧴", "🌶️", "🌾", "🌾", "🧈",
+            "🧼", "🧴", "🪥", "🧼", "🧺", "🌸", "🧹", "🧻", "🧻", "🧽"
+        };
+        String[] names = {
+            "Beras Premium 5kg", "Minyak Goreng 2L", "Gula Pasir 1kg", "Garam Dapur 500g", "Telur Ayam 1kg",
+            "Bawang Merah 500g", "Bawang Putih 500g", "Cabai Rawit 250g", "Tomat Segar 1kg", "Mie Instan 1 Dus",
+            "Kopi Bubuk 250g", "Teh Celup 1 Box", "Susu Kental Manis", "Keju Cheddar 165g", "Madu Asli 250ml",
+            "Kecap Manis 520ml", "Saus Sambal 340ml", "Tepung Terigu 1kg", "Tepung Beras 500g", "Margarin 200g",
+            "Sabun Mandi Cair 450ml", "Shampoo 300ml", "Pasta Gigi 190g", "Sabun Cuci Piring 780ml", "Deterjen Bubuk 1kg",
+            "Pewangi Pakaian 800ml", "Pembersih Lantai 750ml", "Tisu Wajah 250s", "Tisu Toilet 4 Roll", "Spons Cuci Piring"
+        };
+        double[] points = {1500, 800, 250, 100, 450, 300, 350, 400, 200, 1200, 350, 150, 200, 300, 800, 250, 200, 200, 150, 150, 400, 350, 200, 250, 450, 300, 250, 200, 250, 50};
+
+        for (int i = 0; i < names.length; i++) {
+            String reqLevel = points[i] >= 5000 ? "Silver Elite" : (points[i] >= 10000 ? "Gold Champion" : "Green Starter");
+            boolean popular = i < 5;
+            RewardItem item = new RewardItem(names[i], "Item kebutuhan rumah tangga dari katalog NetraSphere.", icons[i], points[i], 100, reqLevel, popular, false);
+            rewardItemRepository.save(item);
+        }
+        
+        // Tambahkan item donasi
+        RewardItem donasiPohon = new RewardItem("Donasi 1 Bibit Pohon", "Bantu hijaukan kota dengan mendonasikan 1 bibit pohon mangrove/mahoni.", "🌳", 2000, -1, "Green Starter", true, true);
+        RewardItem donasiBuku = new RewardItem("Donasi Buku Pendidikan", "Bantu pendidikan anak pelosok dengan buku bacaan.", "📚", 1500, -1, "Green Starter", false, true);
+        RewardItem donasiKucing = new RewardItem("Pakan Kucing Jalanan", "Donasi pakan untuk street feeding kucing jalanan.", "🐈", 500, -1, "Green Starter", true, true);
+        rewardItemRepository.save(donasiPohon);
+        rewardItemRepository.save(donasiBuku);
+        rewardItemRepository.save(donasiKucing);
+        
+        log.info("✅ 33 item katalog hadiah & donasi berhasil dibuat.");
     }
 
     /**

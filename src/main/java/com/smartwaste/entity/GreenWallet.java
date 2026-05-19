@@ -3,7 +3,6 @@ package com.smartwaste.entity;
 import com.smartwaste.exception.InsufficientPointsException;
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -58,6 +57,13 @@ public class GreenWallet extends BaseEntity {
     @Column(name = "redeemed_points", nullable = false)
     private double redeemedPoints = 0.0;
 
+    @Column(name = "target_points")
+    private Double targetPoints = 1000.0;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     /**
      * Konstruktor untuk membuat GreenWallet baru saat citizen pertama kali dibuat.
      *
@@ -67,6 +73,7 @@ public class GreenWallet extends BaseEntity {
         this.citizen = citizen;
         this.totalPoints = 0.0;
         this.redeemedPoints = 0.0;
+        this.targetPoints = 1000.0;
     }
 
     // ==================== Business Logic Methods (Encapsulation) ====================
@@ -80,6 +87,14 @@ public class GreenWallet extends BaseEntity {
      */
     public double getAvailablePoints() {
         return this.totalPoints - this.redeemedPoints;
+    }
+
+    public Double getTargetPoints() {
+        return targetPoints;
+    }
+
+    public void setTargetPoints(Double targetPoints) {
+        this.targetPoints = targetPoints;
     }
 
     /**

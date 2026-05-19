@@ -11,10 +11,11 @@ public interface CitizenService {
     CitizenProfileResponse getMyProfile(String citizenEmail);
     CitizenProfileResponse getById(String citizenId);
     Page<CitizenProfileResponse> getAllCitizens(Pageable pageable);
-    Page<CitizenProfileResponse> searchCitizens(String keyword, Pageable pageable);
+    Page<CitizenProfileResponse> searchCitizens(String keyword, Boolean active, Pageable pageable);
     CitizenProfileResponse updateProfile(String citizenId, String name, String phone, String address);
     void deactivateCitizen(String citizenId);
     void toggleCitizenActive(String citizenId);
     long countActive();
     void importCitizensFromCsv(org.springframework.web.multipart.MultipartFile file);
+    void resetPassword(String citizenId, String newPassword);
 }

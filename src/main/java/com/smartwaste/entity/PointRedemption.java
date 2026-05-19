@@ -3,7 +3,6 @@ package com.smartwaste.entity;
 import com.smartwaste.entity.enums.RedemptionStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -77,6 +76,13 @@ public class PointRedemption extends BaseEntity {
     private String adminNotes;
 
     /**
+     * Referensi ID item reward dari katalog ({@link com.smartwaste.entity.RewardItem}).
+     * Nullable — untuk mendukung permintaan penukaran bebas (tanpa katalog).
+     */
+    @Column(name = "reward_item_id", length = 36)
+    private String rewardItemId;
+
+    /**
      * Konstruktor untuk membuat permintaan penukaran baru.
      *
      * @param citizen        warga yang meminta penukaran
@@ -101,4 +107,6 @@ public class PointRedemption extends BaseEntity {
     public void setRewardCode(String rewardCode) { this.rewardCode = rewardCode; }
     public String getAdminNotes() { return adminNotes; }
     public void setAdminNotes(String adminNotes) { this.adminNotes = adminNotes; }
+    public String getRewardItemId() { return rewardItemId; }
+    public void setRewardItemId(String rewardItemId) { this.rewardItemId = rewardItemId; }
 }

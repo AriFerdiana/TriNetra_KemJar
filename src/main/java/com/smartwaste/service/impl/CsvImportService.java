@@ -5,7 +5,6 @@ import com.smartwaste.entity.Citizen;
 import com.smartwaste.entity.GreenWallet;
 import com.smartwaste.repository.CitizenRepository;
 import com.smartwaste.repository.GreenWalletRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -86,9 +84,7 @@ public class CsvImportService {
 
                 citizen = citizenRepository.save(citizen);
 
-                GreenWallet wallet = new GreenWallet();
-                wallet.setCitizen(citizen);
-                wallet.setTotalPoints(0.0);
+                GreenWallet wallet = new GreenWallet(citizen);
                 greenWalletRepository.save(wallet);
 
                 successCount++;

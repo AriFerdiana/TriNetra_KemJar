@@ -27,7 +27,7 @@ public interface WasteDepositService {
     Page<WasteDepositResponse> getMyDeposits(String citizenEmail, Pageable pageable);
 
     /** Semua setoran (admin/collector view) dengan filter tanggal opsional */
-    Page<WasteDepositResponse> getAllDeposits(java.time.LocalDateTime startDate, java.time.LocalDateTime endDate, String status, Pageable pageable);
+    Page<WasteDepositResponse> getAllDeposits(String search, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate, String status, Pageable pageable);
 
     /** Setoran yang pending (untuk collector) */
     Page<WasteDepositResponse> getPendingDeposits(Pageable pageable);
@@ -50,4 +50,21 @@ public interface WasteDepositService {
 
     /** Mencatat setoran manual oleh Collector secara langsung (tanpa aplikasi warga) */
     void createManualDeposit(String collectorEmail, String citizenId, String categoryId, double weightKg, String notes);
+
+    /** Analytics: Tren koleksi 7 hari terakhir */
+    java.util.List<java.util.Map<String, Object>> getCollectionTrendByCollector(String collectorEmail);
+
+    /** Analytics: Total berat kumulatif petugas */
+    double getTotalWeightByCollector(String collectorEmail);
+
+    /** Analytics: Total poin yang disalurkan oleh petugas */
+    double getTotalPointsByCollector(String collectorEmail);
+
+    /** Analytics: Jumlah warga unik yang dilayani */
+    long countUniqueCitizensServedByCollector(String collectorEmail);
+
+    /** Riwayat setoran yang sudah dikonfirmasi oleh collector tertentu */
+    java.util.List<WasteDepositResponse> getConfirmedByCollector(String collectorId);
+
+    void deleteDeposit(String depositId);
 }

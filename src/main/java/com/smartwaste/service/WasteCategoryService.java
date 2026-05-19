@@ -14,4 +14,5 @@ public interface WasteCategoryService {
     WasteCategoryResponse create(String name, String description, String type, double pointsPerKg, String iconUrl);
     WasteCategoryResponse update(String id, String name, String description, double pointsPerKg);
     void toggleActive(String id);
+    void delete(String id);
 }

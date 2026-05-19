@@ -19,7 +19,7 @@ public interface CollectorService {
     Page<CollectorResponse> getAllCollectors(Pageable pageable);
 
     /** Cari petugas berdasarkan keyword */
-    Page<CollectorResponse> searchCollectors(String keyword, Pageable pageable);
+    Page<CollectorResponse> searchCollectors(String keyword, Boolean active, Pageable pageable);
 
     /** Detail satu petugas */
     CollectorResponse getById(String id);
@@ -36,4 +36,6 @@ public interface CollectorService {
 
     /** Total petugas aktif */
     long countActive();
+
+    void resetPassword(String collectorId, String newPassword);
 }

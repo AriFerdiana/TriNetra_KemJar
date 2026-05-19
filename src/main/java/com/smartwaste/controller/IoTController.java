@@ -5,14 +5,14 @@ import com.smartwaste.dto.response.ApiResponse;
 import com.smartwaste.dto.response.WasteDepositResponse;
 import com.smartwaste.exception.UnauthorizedException;
 import com.smartwaste.service.WasteDepositService;
+import com.smartwaste.service.SmartBinService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Controller khusus untuk endpoint IoT / Robot NetraDUMP.
@@ -33,12 +33,15 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/v1/iot")
+@Tag(name = "IoT Sensor", description = "Webhook untuk robot NetraDUMP")
 public class IoTController {
 
     private final WasteDepositService depositService;
+    private final SmartBinService smartBinService;
 
-    public IoTController(WasteDepositService depositService) {
+    public IoTController(WasteDepositService depositService, SmartBinService smartBinService) {
         this.depositService = depositService;
+        this.smartBinService = smartBinService;
     }
 
     @Value("${app.iot.api-key}")
@@ -94,5 +97,23 @@ public class IoTController {
             throw new UnauthorizedException("API key tidak valid.");
         }
         return ResponseEntity.ok(ApiResponse.success("IoT endpoint aktif dan siap menerima data."));
+    }
+
+    @PostMapping("/bin-status")
+    @Operation(summary = "Update status dan kapasitas Smart Bin")
+    public ResponseEntity<ApiResponse<String>> updateBinStatus(
+            @RequestHeader("X-IoT-Api-Key") String apiKey,
+            @RequestParam String deviceId,
+            @RequestParam Integer fillLevel,
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude) {
+        
+        if (!validIoTApiKey.equals(apiKey)) {
+            throw new UnauthorizedException("API key tidak valid.");
+        }
+
+        smartBinService.updateCapacity(deviceId, fillLevel.doubleValue());
+        
+        return ResponseEntity.ok(ApiResponse.success("Status SmartBin " + deviceId + " berhasil diperbarui ke " + fillLevel + "%"));
     }
 }

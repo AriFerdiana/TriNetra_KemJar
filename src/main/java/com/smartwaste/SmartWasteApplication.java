@@ -16,7 +16,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class SmartWasteApplication {
 
+    // Trigger restart for seeding
     public static void main(String[] args) {
         SpringApplication.run(SmartWasteApplication.class, args);
     }
 }
+
+
+
+

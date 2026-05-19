@@ -9,11 +9,13 @@ import com.smartwaste.exception.ResourceNotFoundException;
 import com.smartwaste.repository.CitizenRepository;
 import com.smartwaste.repository.GreenWalletRepository;
 import com.smartwaste.repository.PointRedemptionRepository;
+import com.smartwaste.repository.RewardItemRepository;
+import com.smartwaste.entity.RewardItem;
 import com.smartwaste.service.GreenWalletService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import com.smartwaste.service.NotificationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,13 +43,22 @@ public class GreenWalletServiceImpl implements GreenWalletService {
     private final CitizenRepository citizenRepository;
     private final GreenWalletRepository walletRepository;
     private final PointRedemptionRepository redemptionRepository;
+    private final RewardItemRepository rewardItemRepository;
+    private final NotificationService notificationService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public GreenWalletServiceImpl(CitizenRepository citizenRepository,
                                   GreenWalletRepository walletRepository,
-                                  PointRedemptionRepository redemptionRepository) {
+                                  PointRedemptionRepository redemptionRepository,
+                                  RewardItemRepository rewardItemRepository,
+                                  NotificationService notificationService,
+                                  SimpMessagingTemplate messagingTemplate) {
         this.citizenRepository = citizenRepository;
         this.walletRepository = walletRepository;
         this.redemptionRepository = redemptionRepository;
+        this.rewardItemRepository = rewardItemRepository;
+        this.notificationService = notificationService;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Override
@@ -72,24 +83,45 @@ public class GreenWalletServiceImpl implements GreenWalletService {
      */
     @Override
     @Transactional
-    public PointRedemption requestRedemption(String citizenEmail, double points, String description) {
+    public PointRedemption requestRedemption(String citizenEmail, double points, String description, String rewardItemId) {
         Citizen citizen = citizenRepository.findByEmail(citizenEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Citizen", "email", citizenEmail));
         GreenWallet wallet = walletRepository.findByCitizen(citizen)
                 .orElseThrow(() -> new ResourceNotFoundException("GreenWallet", "citizenEmail", citizenEmail));
 
-        // Validasi saldo cukup sebelum request (tapi belum dikurangi)
-        if (points > wallet.getAvailablePoints()) {
-            throw new com.smartwaste.exception.InsufficientPointsException(points, wallet.getAvailablePoints());
+        double actualPoints = points;
+        String actualDescription = description;
+
+        // [PATCH BUG KRITIS] Validasi harga asli & stok langsung dari database
+        if (rewardItemId != null && !rewardItemId.isBlank()) {
+            RewardItem rewardItem = rewardItemRepository.findById(rewardItemId)
+                    .orElseThrow(() -> new ResourceNotFoundException("RewardItem", "id", rewardItemId));
+            
+            // Validasi ketersediaan
+            if (!rewardItem.isAvailable()) {
+                throw new IllegalStateException("Hadiah '" + rewardItem.getName() + "' saat ini tidak tersedia atau stok habis.");
+            }
+
+            // Override input dari frontend dengan data asli database
+            actualPoints = rewardItem.getPointsCost();
+            actualDescription = rewardItem.getName();
+            
+            // Note: Tambahan pengecekan Tier/Level bisa ditambahkan di sini berdasarkan totalPoints wallet
         }
-        if (points <= 0) {
+
+        // Validasi saldo cukup sebelum request (berdasarkan poin asli)
+        if (actualPoints > wallet.getAvailablePoints()) {
+            throw new com.smartwaste.exception.InsufficientPointsException(actualPoints, wallet.getAvailablePoints());
+        }
+        if (actualPoints <= 0) {
             throw new IllegalArgumentException("Jumlah poin harus lebih dari 0.");
         }
 
-        // Buat redemption request dengan status PENDING
-        PointRedemption redemption = new PointRedemption(citizen, points, description);
+        // Buat redemption request dengan status PENDING menggunakan poin & deskripsi asli
+        PointRedemption redemption = new PointRedemption(citizen, actualPoints, actualDescription);
+        redemption.setRewardItemId(rewardItemId); // Link ke katalog hadiah jika ada
         PointRedemption saved = redemptionRepository.save(redemption);
-        log.info("Permintaan penukaran {} poin oleh {} — status PENDING", points, citizenEmail);
+        log.info("Permintaan penukaran {} poin (Asli: {}) oleh {} — status PENDING", points, actualPoints, citizenEmail);
         return saved;
     }
 
@@ -109,6 +141,18 @@ public class GreenWalletServiceImpl implements GreenWalletService {
         GreenWallet wallet = walletRepository.findByCitizen(redemption.getCitizen())
                 .orElseThrow(() -> new ResourceNotFoundException("GreenWallet", "citizenId", redemption.getCitizen().getId()));
 
+        // --- Validasi dan Kurangi Stok Reward Item ---
+        if (redemption.getRewardItemId() != null && !redemption.getRewardItemId().isBlank()) {
+            RewardItem rewardItem = rewardItemRepository.findById(redemption.getRewardItemId())
+                    .orElseThrow(() -> new ResourceNotFoundException("RewardItem", "id", redemption.getRewardItemId()));
+            
+            if (!rewardItem.isAvailable()) {
+                throw new IllegalStateException("Stok hadiah '" + rewardItem.getName() + "' sudah habis atau tidak aktif.");
+            }
+            rewardItem.decreaseStock();
+            rewardItemRepository.save(rewardItem);
+        }
+
         // Kurangi poin dari wallet (encapsulation: validasi di dalam entity)
         wallet.redeemPoints(redemption.getPointsRedeemed());
         walletRepository.save(wallet);
@@ -121,6 +165,16 @@ public class GreenWalletServiceImpl implements GreenWalletService {
 
         log.info("Penukaran {} poin untuk {} disetujui.",
                 redemption.getPointsRedeemed(), redemption.getCitizen().getEmail());
+
+        notificationService.sendNotification(
+            redemption.getCitizen(),
+            "Penukaran Berhasil!",
+            String.format("Penukaran %.0f poin untuk %s telah disetujui. Kode: %s", redemption.getPointsRedeemed(), redemption.getDescription(), redemption.getRewardCode()),
+            "SUCCESS"
+        );
+
+        // Broadcast to citizen that their wallet points updated
+        messagingTemplate.convertAndSend("/queue/citizen/" + redemption.getCitizen().getEmail() + "/wallet", "POINTS_UPDATED");
 
         return mapToResponse(wallet);
     }
@@ -145,6 +199,13 @@ public class GreenWalletServiceImpl implements GreenWalletService {
         log.info("Penukaran {} poin untuk {} ditolak.",
                 redemption.getPointsRedeemed(), redemption.getCitizen().getEmail());
 
+        notificationService.sendNotification(
+            redemption.getCitizen(),
+            "Penukaran Ditolak",
+            String.format("Penukaran %.0f poin untuk %s ditolak. Saldo dikembalikan. Alasan: %s", redemption.getPointsRedeemed(), redemption.getDescription(), adminNotes),
+            "WARNING"
+        );
+
         GreenWallet wallet = walletRepository.findByCitizen(redemption.getCitizen())
                 .orElseThrow(() -> new ResourceNotFoundException("GreenWallet", "citizenId", redemption.getCitizen().getId()));
         return mapToResponse(wallet);
@@ -156,8 +217,8 @@ public class GreenWalletServiceImpl implements GreenWalletService {
     }
 
     @Override
-    public Page<PointRedemption> getAllRedemptions(Pageable pageable) {
-        return redemptionRepository.findAll(pageable);
+    public Page<PointRedemption> getAllRedemptions(String search, Pageable pageable) {
+        return redemptionRepository.findWithSearch(search, pageable);
     }
 
     @Override
@@ -165,6 +226,18 @@ public class GreenWalletServiceImpl implements GreenWalletService {
         Citizen citizen = citizenRepository.findByEmail(citizenEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Citizen", "email", citizenEmail));
         return redemptionRepository.findByCitizen(citizen, pageable);
+    }
+
+    @Override
+    @Transactional
+    public void updateTargetPoints(String citizenEmail, Double targetPoints) {
+        Citizen citizen = citizenRepository.findByEmail(citizenEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Citizen", "email", citizenEmail));
+        GreenWallet wallet = walletRepository.findByCitizen(citizen)
+                .orElseThrow(() -> new ResourceNotFoundException("GreenWallet", "citizenEmail", citizenEmail));
+        
+        wallet.setTargetPoints(targetPoints != null && targetPoints > 0 ? targetPoints : 1000.0);
+        walletRepository.save(wallet);
     }
 
     private WalletResponse mapToResponse(GreenWallet wallet) {
@@ -175,6 +248,7 @@ public class GreenWalletServiceImpl implements GreenWalletService {
                 .totalPoints(wallet.getTotalPoints())
                 .redeemedPoints(wallet.getRedeemedPoints())
                 .availablePoints(wallet.getAvailablePoints())
+                .targetPoints(wallet.getTargetPoints() != null ? wallet.getTargetPoints() : 1000.0)
                 .build();
     }
 }

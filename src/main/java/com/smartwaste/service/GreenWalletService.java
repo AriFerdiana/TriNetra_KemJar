@@ -24,7 +24,7 @@ public interface GreenWalletService {
      * Ajukan permintaan penukaran poin — status PENDING (perlu admin approve).
      * Poin BELUM dikurangi sampai admin approve.
      */
-    PointRedemption requestRedemption(String citizenEmail, double points, String description);
+    PointRedemption requestRedemption(String citizenEmail, double points, String description, String rewardItemId);
 
     /** Admin menyetujui penukaran poin → kurangi poin dari wallet */
     WalletResponse approveRedemption(String redemptionId, String adminNotes);
@@ -36,8 +36,10 @@ public interface GreenWalletService {
     Page<PointRedemption> getPendingRedemptions(Pageable pageable);
 
     /** Semua redemption (semua status, untuk admin) */
-    Page<PointRedemption> getAllRedemptions(Pageable pageable);
+    Page<PointRedemption> getAllRedemptions(String search, Pageable pageable);
 
     /** Riwayat redemption milik citizen */
     Page<PointRedemption> getMyRedemptions(String citizenEmail, Pageable pageable);
+
+    void updateTargetPoints(String citizenEmail, Double targetPoints);
 }

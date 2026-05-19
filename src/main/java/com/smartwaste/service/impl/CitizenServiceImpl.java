@@ -8,7 +8,6 @@ import com.smartwaste.repository.CitizenRepository;
 import com.smartwaste.repository.GreenWalletRepository;
 import com.smartwaste.repository.WasteDepositRepository;
 import com.smartwaste.service.CitizenService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,13 +23,16 @@ public class CitizenServiceImpl implements CitizenService {
     private final CitizenRepository citizenRepository;
     private final GreenWalletRepository greenWalletRepository;
     private final WasteDepositRepository wasteDepositRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     public CitizenServiceImpl(CitizenRepository citizenRepository,
                               GreenWalletRepository greenWalletRepository,
-                              WasteDepositRepository wasteDepositRepository) {
+                              WasteDepositRepository wasteDepositRepository,
+                              org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.citizenRepository = citizenRepository;
         this.greenWalletRepository = greenWalletRepository;
         this.wasteDepositRepository = wasteDepositRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -53,8 +55,8 @@ public class CitizenServiceImpl implements CitizenService {
     }
 
     @Override
-    public Page<CitizenProfileResponse> searchCitizens(String keyword, Pageable pageable) {
-        return citizenRepository.searchCitizens(keyword, pageable).map(this::mapToResponse);
+    public Page<CitizenProfileResponse> searchCitizens(String keyword, Boolean active, Pageable pageable) {
+        return citizenRepository.searchCitizens(keyword, active, pageable).map(this::mapToResponse);
     }
 
     @Override
@@ -98,8 +100,6 @@ public class CitizenServiceImpl implements CitizenService {
              com.opencsv.CSVReader csvReader = new com.opencsv.CSVReaderBuilder(reader).withSkipLines(1).build()) {
             
             String[] line;
-            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder = 
-                    new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
             
             while ((line = csvReader.readNext()) != null) {
                 if (line.length < 3) continue;
@@ -120,15 +120,21 @@ public class CitizenServiceImpl implements CitizenService {
                 Citizen saved = citizenRepository.save(citizen);
                 
                 // Initialize wallet
-                GreenWallet wallet = new GreenWallet();
-                wallet.setCitizen(saved);
-                wallet.setTotalPoints(0.0);
-                wallet.setRedeemedPoints(0.0);
+                GreenWallet wallet = new GreenWallet(saved);
                 greenWalletRepository.save(wallet);
             }
         } catch (Exception e) {
             throw new RuntimeException("Gagal mengimpor data warga: " + e.getMessage());
         }
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(String citizenId, String newPassword) {
+        Citizen citizen = citizenRepository.findById(citizenId)
+                .orElseThrow(() -> new ResourceNotFoundException("Citizen", "id", citizenId));
+        citizen.setPassword(passwordEncoder.encode(newPassword));
+        citizenRepository.save(citizen);
     }
 
     /** Mapper: Citizen entity → CitizenProfileResponse DTO (Encapsulation) */

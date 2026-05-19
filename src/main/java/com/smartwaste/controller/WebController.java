@@ -1,7 +1,6 @@
 package com.smartwaste.controller;
 
 import com.smartwaste.service.impl.PasswordResetService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,12 +30,16 @@ public class WebController {
     public String loginPage(
             @RequestParam(required = false) String error,
             @RequestParam(required = false) String logout,
+            @RequestParam(required = false) String timeout,
             Model model) {
         if (error != null) {
             model.addAttribute("errorMsg", "Email atau password salah. Silakan coba lagi.");
         }
         if (logout != null) {
             model.addAttribute("successMsg", "Anda berhasil logout. Sampai jumpa! 👋");
+        }
+        if (timeout != null) {
+            model.addAttribute("errorMsg", "Sesi Anda telah berakhir. Silakan coba lagi.");
         }
         return "auth/login";
     }
@@ -46,7 +49,7 @@ public class WebController {
         return "auth/register";
     }
 
-    @GetMapping("/auth/access-denied")
+    @org.springframework.web.bind.annotation.RequestMapping(value = "/auth/access-denied", method = {org.springframework.web.bind.annotation.RequestMethod.GET, org.springframework.web.bind.annotation.RequestMethod.POST})
     public String accessDenied() {
         return "auth/access-denied";
     }

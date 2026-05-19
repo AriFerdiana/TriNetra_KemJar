@@ -1,6 +1,7 @@
 package com.smartwaste.controller;
 
 import com.smartwaste.dto.response.WasteDepositResponse;
+import com.smartwaste.entity.enums.DepositStatus;
 import com.smartwaste.repository.CollectorRepository;
 import com.smartwaste.service.WasteDepositService;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,9 @@ public class CollectorWebController {
     private final com.smartwaste.repository.WasteCategoryRepository categoryRepository;
     private final com.smartwaste.repository.CitizenRepository citizenRepository;
     private final com.smartwaste.repository.CollectorNotificationRepository notificationRepository;
+    private final com.smartwaste.repository.SmartBinRepository smartBinRepository;
+    private final com.smartwaste.repository.FieldReportRepository fieldReportRepository;
+    private final com.smartwaste.service.impl.FileStorageService fileStorageService;
 
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('COLLECTOR')")
@@ -135,8 +139,39 @@ public class CollectorWebController {
         // Feature D: Leaderboard
         try {
             model.addAttribute("leaderboard", collectorRepository.getCollectorLeaderboard());
+            
+            // Fetch confirmed deposits for history tab
+            collectorRepository.findByEmail(userDetails.getUsername()).ifPresent(collector -> {
+                model.addAttribute("confirmedDeposits", depositService.getConfirmedByCollector(collector.getId()));
+                model.addAttribute("totalConfirmed", depositService.countByCollectorAndStatus(collector, DepositStatus.CONFIRMED));
+                model.addAttribute("totalRejected", depositService.countByCollectorAndStatus(collector, DepositStatus.REJECTED));
+            });
         } catch (Exception e) {
             model.addAttribute("leaderboard", java.util.List.of());
+            model.addAttribute("confirmedDeposits", java.util.List.of());
+        }
+
+        // Feature E: Advanced Analytics
+        try {
+            model.addAttribute("totalWeightAllTime", depositService.getTotalWeightByCollector(userDetails.getUsername()));
+            model.addAttribute("totalPointsDisbursed", depositService.getTotalPointsByCollector(userDetails.getUsername()));
+            model.addAttribute("totalCitizensServed", depositService.countUniqueCitizensServedByCollector(userDetails.getUsername()));
+            model.addAttribute("collectionTrend", depositService.getCollectionTrendByCollector(userDetails.getUsername()));
+            
+            // Calculate Efficiency Rate
+            Object confirmedObj = model.getAttribute("totalConfirmed");
+            Object rejectedObj = model.getAttribute("totalRejected");
+            long c = (confirmedObj instanceof Long) ? (Long) confirmedObj : 0L;
+            long r = (rejectedObj instanceof Long) ? (Long) rejectedObj : 0L;
+            long total = c + r;
+            double efficiency = total > 0 ? (double) c / total * 100 : 0;
+            model.addAttribute("efficiencyRate", efficiency);
+            
+        } catch (Exception e) {
+            model.addAttribute("totalWeightAllTime", 0.0);
+            model.addAttribute("totalPointsDisbursed", 0.0);
+            model.addAttribute("totalCitizensServed", 0L);
+            model.addAttribute("collectionTrend", java.util.List.of());
         }
 
         return "collector/dashboard";
@@ -164,11 +199,13 @@ public class CollectorWebController {
     @PreAuthorize("hasRole('COLLECTOR')")
     public String confirmDeposit(@AuthenticationPrincipal UserDetails userDetails,
                                  @PathVariable String id,
-                                 @RequestParam(required = false) String pickupProofUrl,
+                                 @RequestParam(value = "file", required = false) org.springframework.web.multipart.MultipartFile file,
                                  org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
         try {
-            // Jika tidak ada URL, gunakan placeholder atau biarkan kosong
-            String finalUrl = (pickupProofUrl != null && !pickupProofUrl.isBlank()) ? pickupProofUrl : "";
+            String finalUrl = "";
+            if (file != null && !file.isEmpty()) {
+                finalUrl = fileStorageService.storeFile(file);
+            }
             depositService.confirmDeposit(id, userDetails.getUsername(), finalUrl);
             redirectAttributes.addFlashAttribute("successMessage", "Setoran berhasil dikonfirmasi dan poin telah disalurkan.");
         } catch (Exception e) {
@@ -227,6 +264,24 @@ public class CollectorWebController {
     }
 
     /**
+     * Export seluruh riwayat petugas sebagai PDF.
+     */
+    @GetMapping("/export/history")
+    @PreAuthorize("hasRole('COLLECTOR')")
+    public ResponseEntity<byte[]> exportFullHistory(@AuthenticationPrincipal UserDetails userDetails) {
+        return collectorRepository.findByEmail(userDetails.getUsername())
+                .map(collector -> {
+                    byte[] pdf = pdfExportService.exportCollectorFullHistory(collector);
+                    String filename = "Riwayat_Lengkap_" + collector.getName().replace(" ", "_") + ".pdf";
+                    return ResponseEntity.ok()
+                            .header("Content-Type", "application/pdf")
+                            .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                            .body(pdf);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
      * Mencatat setoran manual oleh petugas (drop-off langsung).
      */
     @PostMapping("/deposit/manual")
@@ -257,14 +312,14 @@ public class CollectorWebController {
         if (q == null || q.isBlank() || q.length() < 2) {
             return ResponseEntity.ok(java.util.List.of());
         }
-        var result = citizenRepository.searchCitizens(q,
+        java.util.List<java.util.Map<String, String>> result = citizenRepository.searchCitizens(q, true,
                 org.springframework.data.domain.PageRequest.of(0, 8)).stream()
                 .map(c -> java.util.Map.of(
-                        "id", c.getId(),
-                        "name", c.getName(),
+                        "id", c.getId() != null ? c.getId() : "",
+                        "name", c.getName() != null ? c.getName() : "",
                         "nik", c.getNik() != null ? c.getNik() : ""
                 ))
-                .toList();
+                .collect(java.util.stream.Collectors.toList());
         return ResponseEntity.ok(result);
     }
 
@@ -318,6 +373,54 @@ public class CollectorWebController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body(java.util.Map.of("success", false, "message", e.getMessage()));
         }
+    }
+
+    /**
+     * Get all smart bins for the map overlay.
+     */
+    @GetMapping("/smart-bins")
+    @PreAuthorize("hasRole('COLLECTOR')")
+    @ResponseBody
+    public ResponseEntity<java.util.List<com.smartwaste.entity.SmartBin>> getSmartBins() {
+        return ResponseEntity.ok(smartBinRepository.findAll());
+    }
+
+    /**
+     * Submit a field report (broken bin, illegal dumping, etc.)
+     */
+    @PostMapping("/report-issue")
+    @PreAuthorize("hasRole('COLLECTOR')")
+    public String reportIssue(@AuthenticationPrincipal UserDetails userDetails,
+                              @RequestParam String title,
+                              @RequestParam String description,
+                              @RequestParam(required = false) String location,
+                              org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        try {
+            collectorRepository.findByEmail(userDetails.getUsername()).ifPresent(collector -> {
+                com.smartwaste.entity.FieldReport report = new com.smartwaste.entity.FieldReport();
+                report.setCollector(collector);
+                report.setTitle(title);
+                report.setDescription(description);
+                report.setLocation(location);
+                fieldReportRepository.save(report);
+            });
+            ra.addFlashAttribute("successMessage", "Laporan lapangan berhasil dikirim.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("errorMessage", "Gagal mengirim laporan: " + e.getMessage());
+        }
+        return "redirect:/collector/dashboard";
+    }
+
+    /**
+     * Check if there are new pending tasks since the last view.
+     */
+    @GetMapping("/check-new-tasks")
+    @PreAuthorize("hasRole('COLLECTOR')")
+    @ResponseBody
+    public ResponseEntity<java.util.Map<String, Object>> checkNewTasks(@RequestParam long lastCount) {
+        long currentCount = depositService.countPendingDeposits();
+        boolean hasNew = currentCount > lastCount;
+        return ResponseEntity.ok(java.util.Map.of("hasNew", hasNew, "currentCount", currentCount));
     }
 }
 

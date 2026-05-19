@@ -8,7 +8,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -175,9 +174,12 @@ public class GlobalExceptionHandler {
             validationErrors.put(fieldName, errorMessage);
         });
 
+        // Ambil pesan error pertama sebagai summary untuk SweetAlert
+        String firstErrorMessage = validationErrors.values().iterator().next();
+
         return buildErrorResponse(
                 HttpStatus.BAD_REQUEST,
-                "Validasi gagal. Periksa kembali input Anda.",
+                firstErrorMessage, // Gunakan pesan spesifik pertama sebagai message utama
                 validationErrors,
                 request
         );

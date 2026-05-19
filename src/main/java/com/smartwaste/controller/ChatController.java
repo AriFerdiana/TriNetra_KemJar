@@ -4,7 +4,6 @@ import com.smartwaste.entity.ChatMessage;
 import com.smartwaste.entity.User;
 import com.smartwaste.repository.ChatRepository;
 import com.smartwaste.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/internal/chat")
