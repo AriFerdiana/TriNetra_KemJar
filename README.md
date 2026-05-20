@@ -1,59 +1,128 @@
-# TriNetra: Smart Community Waste System 🌿
+# NetraSphere — TriNetra: Smart Community Waste System 🌿
 
-Sistem Pengelolaan Sampah Komunitas Cerdas yang mengintegrasikan pengelolaan sampah berbasis warga, gamifikasi (Green Wallet), integrasi perangkat IoT (NetraDUMP), dan dukungan AI (Mistral AI). Proyek ini dibangun sebagai Tugas Besar Pemrograman Berorientasi Objek (PBO).
+Sistem Pengelolaan Sampah Komunitas Cerdas (Smart Community Waste System) terintegrasi yang menggabungkan pengelolaan sampah berbasis warga, gamifikasi (*Green Wallet*), integrasi perangkat keras IoT (*NetraDUMP*), dan asisten kecerdasan buatan (*AI Chatbot*). Proyek ini dibangun menggunakan standar industri untuk memenuhi Tugas Besar pemrograman berorientasi objek (PBO) kelas reguler.
+
+---
+
+## 📸 Diagram Kelas Sistem (Class Diagram)
+
+Berikut adalah visualisasi arsitektur dan hubungan antar kelas dalam sistem **NetraSphere / TriNetra** secara menyeluruh:
+
+<p align="center">
+  <img src="class_diagram.png" alt="Class Diagram NetraSphere" width="100%" />
+</p>
+
+---
 
 ## ✨ Fitur Utama
-- **RBAC (Role Based Access Control)**: Admin, Warga, dan Petugas Lapangan.
-- **Green Wallet**: Sistem poin otomatis berdasarkan berat dan kategori sampah.
-- **IoT-Ready**: Endpoint API khusus untuk menerima data setoran dari robot/smart bin otonom.
-- **AI Chatbot**: Integrasi Mistral AI untuk panduan pemilahan sampah dan estimasi poin.
-- **Reporting**: Ekspor laporan ke PDF & CSV, serta visualisasi grafik statistik.
-- **Modern UI**: Dashboard yang responsif dan interaktif dengan Alpine.js dan Tailwind CSS.
 
-## 🚀 Teknologi yang Digunakan
-- **Backend**: Java 17, Spring Boot 3.2.x, Spring Security, JPA Hibernate.
-- **Database**: MySQL 8.x.
-- **Frontend**: Thymeleaf, Tailwind CSS, Alpine.js, Chart.js.
-- **AI**: Mistral AI (Small Latest Model).
-- **Export**: OpenPDF, OpenCSV.
+Sistem ini memiliki 3 panel dashboard utama yang disesuaikan dengan peran masing-masing pengguna (**RBAC**):
+
+1.  **Dashboard Warga (Citizen)**
+    *   **Green Wallet**: Dompet digital penyimpan poin ramah lingkungan (*Green Points*).
+    *   **Setor Sampah**: Pencatatan setoran sampah manual (unggah bukti foto) dan setoran otomatis via IoT.
+    *   **Katalog Hadiah & Donasi**: Penukaran poin yang terkumpul dengan bahan pokok (*Reward Items*) atau donasi sosial (tanam pohon, pakan hewan liar).
+    *   **AI Chatbot**: Asisten pintar berbasis **Mistral AI** untuk konsultasi pemilahan sampah dan estimasi poin secara real-time.
+    *   **Peta Lokasi & Badges**: Sistem gamifikasi dengan pencapaian lencana keaktifan (*Badges*).
+
+2.  **Dashboard Petugas (Collector / Robot IoT)**
+    *   **Tugas Aktif**: Mengonfirmasi setoran sampah warga (mengubah status `PENDING` $\rightarrow$ `CONFIRMED` disertai unggah foto bukti pickup).
+    *   **Catat Setoran Manual**: Memfasilitasi pencatatan setoran langsung di lapangan.
+    *   **Statistik Muatan**: Memantau kapasitas kendaraan pengangkut secara real-time.
+    *   **IoT Endpoint**: Bertindak sebagai device sensor otonom untuk smart bin yang mengirim data timbangan langsung via API.
+
+3.  **Dashboard Administrator (Admin)**
+    *   **Manajemen Pengguna**: Mengelola status akun Admin, Warga, dan Petugas.
+    *   **Katalog Sampah**: Menambahkan jenis kategori sampah beserta bobot nilai poin per kilogram.
+    *   **Katalog Hadiah**: Menambah/mengedit barang dan stok di toko penukaran poin.
+    *   **Verifikasi Penukaran Poin**: Meninjau dan menyetujui request penukaran poin warga.
+    *   **Analitik & Pelaporan Ekspor**: Visualisasi tren setoran harian dan ekspor data laporan ke format **PDF & CSV**.
+
+---
+
+## 🧠 Konsep OOP yang Diimplementasikan
+
+Proyek ini mendemonstrasikan penerapan pilar-pilar OOP secara menyeluruh dan mendalam:
+
+1.  **Abstraction (Abstraksi) & Inheritance (Pewarisan)**
+    *   **`BaseEntity` (Abstract Superclass)**: MappedSuperclass universal untuk menyediakan atribut ID (UUID) serta timestamp audit (`createdAt`, `updatedAt`) dengan *lifecycle callbacks* JPA.
+    *   **`User` (Abstract Superclass)**: Kelas dasar pengguna yang mengimplementasikan `UserDetails` (Spring Security). Diwarisi secara terstruktur menggunakan strategi database **JPA JOINED** oleh subclass konkret: `Admin`, `Citizen`, dan `Collector`.
+    *   **Polimorfisme Metode**: Metode abstrak `public abstract String getRole()` di-override oleh masing-masing subclass untuk menghasilkan peran yang dinamis.
+
+2.  **Polymorphism (Polimorfisme) via Strategy Pattern**
+    *   **`PointCalculatorStrategy` (Interface)**: Kontrak logika kalkulasi poin.
+    *   **Concrete Strategies**: `OrganicPointCalculator`, `InorganicPointCalculator`, dan `B3PointCalculator` (masing-masing memiliki pengali bobot poin dan bonus yang berbeda).
+    *   **`PointCalculatorContext`**: Memilih strategi kalkulasi poin secara dinamis saat runtime (*runtime polymorphism*) berdasarkan tipe sampah dari kategori yang bersangkutan.
+
+3.  **Encapsulation (Enkapsulasi Logika Bisnis)**
+    *   **`GreenWallet`**: Saldo poin (`totalPoints` & `redeemedPoints`) tidak dapat dimanipulasi langsung dari luar kelas. Perubahan wajib melalui metode bisnis internal yang memiliki proteksi validasi ketat, seperti `addPoints()`, `redeemPoints()`, dan `rollbackRedemption()`.
+    *   **`WasteDeposit`**: Transisi state transaksi (PENDING, CONFIRMED, REJECTED) dienkapsulasi aman di dalam metode entitas `confirm()` dan `reject()`.
+
+---
 
 ## 🛠️ Cara Instalasi & Menjalankan Projek
 
-### 1. Prasyarat
-- Java JDK 17 atau lebih baru.
-- Maven 3.x.
-- MySQL Server 8.x.
+### 1. Prasyarat System
+*   **Java JDK**: Versi 17 atau lebih baru.
+*   **Maven**: Versi 3.x.
+*   **MySQL Server**: Versi 8.x.
 
 ### 2. Persiapan Database
-1. Buat database baru di MySQL:
-   ```sql
-   CREATE DATABASE db_tubes_pbo_trinetra;
-   ```
-2. Import file `database_dump.sql` yang tersedia di root folder projek ke database tersebut.
+1.  Buka terminal MySQL Anda dan buat database baru:
+    ```sql
+    CREATE DATABASE db_tubes_pbo_trinetra;
+    ```
+2.  Import skema dan data awal menggunakan dump SQL yang tersedia di root folder proyek:
+    *   Menggunakan `db_tubes_pbo_trinetra.sql` atau `database_dump.sql` ke dalam database `db_tubes_pbo_trinetra`.
+    *   *Alternatif*: Anda juga dapat mengandalkan **Data Seeder Otomatis** bawaan Spring Boot saat aplikasi pertama kali dijalankan (pastikan tabel kosong agar seeder memicu pengisian data secara otomatis).
 
-### 3. Konfigurasi Aplikasi
-Buka file `src/main/resources/application.yml` dan sesuaikan kredensial berikut:
-- **Datasource**: Update `username` dan `password` MySQL Anda.
-- **Mail (Opsional)**: Update SMTP credentials untuk fitur reset password via email.
-- **Mistral AI (Opsional)**: Masukkan API Key Anda jika ingin menggunakan fitur Chatbot AI.
+### 3. Konfigurasi Kredensial
+Buka file `src/main/resources/application.yml` (atau `application.properties`) dan sesuaikan baris-baris berikut:
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3606/db_tubes_pbo_trinetra?useSSL=false&serverTimezone=UTC
+    username: root          # Ganti dengan username MySQL Anda
+    password: password      # Ganti dengan password MySQL Anda
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+# Konfigurasi Fitur Integrasi (Opsional)
+app:
+  iot:
+    api-key: IOT-TRINETRA-NETRADUMP-2024-SECRET
+  mistral:
+    api-key: YOUR_MISTRAL_API_KEY # Masukkan API Key Mistral AI untuk mengaktifkan chatbot
+```
 
 ### 4. Menjalankan Aplikasi
-Buka terminal di root direktori projek, lalu jalankan:
+Buka terminal tepat di root direktori proyek, lalu eksekusi perintah Maven berikut:
 ```bash
 mvn clean spring-boot:run
 ```
-Aplikasi akan berjalan di `http://localhost:8080`.
-
-## 👤 Kredensial Akses (Demo)
-| Role | Email | Password |
-| :--- | :--- | :--- |
-| **Admin** | `admin@smartwaste.com` | `Admin@123` |
-| **Petugas** | `petugas@smartwaste.com` | `Petugas@123` |
-| **Warga** | `warga@smartwaste.com` | `Warga@123` |
-
-## 📋 API Dokumentasi (Swagger)
-Setelah aplikasi berjalan, dokumentasi API dapat diakses di:
-`http://localhost:8080/swagger-ui.html`
+Setelah proses startup sukses, buka browser Anda dan akses:
+👉 **`http://localhost:8080`**
 
 ---
-**Tim Trinetra** — *Inovasi untuk Bumi yang Lebih Hijau.*
+
+## 👤 Kredensial Akses Akun Demo
+
+Untuk mempermudah pengujian alur kerja sistem, gunakan akun demo berikut yang telah di-seed dengan kata sandi universal:
+
+| Peran (Role) | Alamat Email (Username) | Kata Sandi (Password) | Deskripsi Fitur Utama |
+| :--- | :--- | :--- | :--- |
+| 👑 **Admin** | `admin@smartwaste.com` | `password` | Konfirmasi penukaran hadiah, kelola kategori sampah, lihat analitik global. |
+| 🏃‍♂️ **Petugas** | `petugas@smartwaste.com` | `password` | Validasi setoran pending warga, ambil sampah di lapangan, lacak muatan. |
+| 🏡 **Warga** | `warga@smartwaste.com` | `password` | Setor sampah, tanya jawab AI Chatbot, cek saldo Green Wallet, redeem hadiah. |
+
+> [!NOTE]
+> Seluruh kata sandi di atas dienkripsi dengan algoritma **BCrypt** di dalam database demi keamanan autentikasi.
+
+---
+
+## 📋 Swagger API Dokumentasi (IoT-Ready)
+
+Setelah aplikasi berjalan, dokumentasi REST API untuk integrasi hardware IoT (smart bin/robot) dapat diakses secara interaktif pada:
+👉 **`http://localhost:8080/swagger-ui.html`**
+
+---
+**Tim Trinetra** — *Inovasi Cerdas untuk Bumi yang Lebih Hijau.*

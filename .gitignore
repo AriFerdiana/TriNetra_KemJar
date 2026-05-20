@@ -24,3 +24,7 @@ target/
 
 # Temporary files
 database_dump.sql.tmp
+
+# Antigravity artifacts
+artifacts/
+

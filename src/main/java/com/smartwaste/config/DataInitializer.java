@@ -81,12 +81,12 @@ public class DataInitializer implements CommandLineRunner {
             Admin admin = new Admin(
                 "Super Admin",
                 "admin@smartwaste.com",
-                passwordEncoder.encode("Admin@123"),
+                passwordEncoder.encode("password"),
                 "08100000001",
                 "Super Administrator"
             );
             userRepository.save(admin);
-            log.info("✅ Admin default dibuat: admin@smartwaste.com / Admin@123");
+            log.info("✅ Admin default dibuat: admin@smartwaste.com / password");
         }
     }
 
@@ -103,7 +103,7 @@ public class DataInitializer implements CommandLineRunner {
             if (!userRepository.existsByEmail(email)) {
                 Collector collector = new Collector(
                     names[i], email,
-                    passwordEncoder.encode("Petugas@123"),
+                    passwordEncoder.encode("password"),
                     "081" + (100000000 + i),
                     "B " + (1234 + i) + " SW",
                     "Area Wilayah " + (char)('A' + i)
@@ -130,7 +130,7 @@ public class DataInitializer implements CommandLineRunner {
         if (!userRepository.existsByEmail("warga@smartwaste.com")) {
             Citizen citizen = new Citizen(
                 "Ahmad Warga", "warga@smartwaste.com",
-                passwordEncoder.encode("Warga@123"),
+                passwordEncoder.encode("password"),
                 "081222333444", "3201012345678901",
                 "Jl. Kebersihan No. 10, RT 02/01"
             );
@@ -138,7 +138,7 @@ public class DataInitializer implements CommandLineRunner {
             citizen.setKelurahan("Sukabersih");
             Citizen saved = citizenRepository.save(citizen);
             greenWalletRepository.save(new GreenWallet(saved));
-            log.info("✅ Citizen default dibuat: warga@smartwaste.com / Warga@123");
+            log.info("✅ Citizen default dibuat: warga@smartwaste.com / password");
         }
 
         if (citizenRepository.count() < 50) {
@@ -160,7 +160,7 @@ public class DataInitializer implements CommandLineRunner {
                     Citizen c = new Citizen(
                         firstNames[rnd.nextInt(firstNames.length)] + " " + lastNames[rnd.nextInt(lastNames.length)],
                         email,
-                        passwordEncoder.encode("Warga@123"),
+                        passwordEncoder.encode("password"),
                         "0812" + (10000000 + rnd.nextInt(90000000)),
                         "3201" + (100000000000L + rnd.nextInt(900000000)),
                         "Jl. Dummy No. " + i
