@@ -461,6 +461,20 @@
                                     <p class="text-xs font-bold text-gray-600 mt-0.5 leading-relaxed" th:text="${d.notes}">-</p>
                                 </div>
                             </div>
+
+                            <!-- Foto Bukti Sampah dari Warga -->
+                            <div class="flex items-start gap-3 bg-gray-50/80 rounded-2xl px-4 py-3">
+                                <span class="text-lg mt-0.5">📸</span>
+                                <div class="flex-1">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Foto Sampah dari Warga</p>
+                                    <a th:href="${(d.imageUrl != null and !#strings.isEmpty(d.imageUrl)) ? d.imageUrl : 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=500&q=80'}" target="_blank" class="block">
+                                        <img th:src="${(d.imageUrl != null and !#strings.isEmpty(d.imageUrl)) ? d.imageUrl : 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=500&q=80'}"
+                                             alt="Foto Sampah"
+                                             class="w-full h-32 object-cover rounded-xl border border-gray-200 hover:scale-[1.02] transition-transform shadow-sm cursor-pointer"
+                                             onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=500&q=80';">
+                                    </a>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Estimasi Poin -->

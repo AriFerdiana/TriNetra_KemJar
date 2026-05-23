@@ -76,7 +76,7 @@ app:
 
   # Mistral AI Integration
   mistral:
-    api-key: YOUR_MISTRAL_API_KEY_HERE  # Ganti dengan key dari console.mistral.ai
+    api-key: WnQAuvwg4Ykz71Mmxj7DgeUcF5RIAIml
     base-url: https://api.mistral.ai/v1
     model: mistral-small-latest
     max-tokens: 512

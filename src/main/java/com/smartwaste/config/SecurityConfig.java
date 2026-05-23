@@ -66,6 +66,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 // IoT endpoint — cukup dengan API key (divalidasi di controller)
                 .requestMatchers("/api/v1/iot/**").permitAll()
+                // Chatbot anonim
+                .requestMatchers("/api/v1/chat/anonymous").permitAll()
                 // Swagger / OpenAPI docs — terbuka
                 .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 // Admin only

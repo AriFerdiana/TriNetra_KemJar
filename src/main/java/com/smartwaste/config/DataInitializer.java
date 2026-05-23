@@ -39,6 +39,7 @@ public class DataInitializer implements CommandLineRunner {
     private final WasteDepositRepository  wasteDepositRepository;
     private final RewardItemRepository    rewardItemRepository;
     private final PasswordEncoder         passwordEncoder;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     public DataInitializer(UserRepository userRepository,
                            CollectorRepository collectorRepository,
@@ -47,7 +48,8 @@ public class DataInitializer implements CommandLineRunner {
                            WasteCategoryRepository wasteCategoryRepository,
                            WasteDepositRepository wasteDepositRepository,
                            RewardItemRepository rewardItemRepository,
-                           PasswordEncoder passwordEncoder) {
+                           PasswordEncoder passwordEncoder,
+                           org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.userRepository = userRepository;
         this.collectorRepository = collectorRepository;
         this.citizenRepository = citizenRepository;
@@ -56,11 +58,21 @@ public class DataInitializer implements CommandLineRunner {
         this.wasteDepositRepository = wasteDepositRepository;
         this.rewardItemRepository = rewardItemRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public void run(String... args) {
         System.out.println(">>> SEEDER DEBUG: Starting data initialization...");
+        
+        // FIX BUG: Hibernate unboxing error on version field due to existing NULL values
+        try {
+            jdbcTemplate.execute("UPDATE green_wallets SET version = 0 WHERE version IS NULL");
+            System.out.println(">>> SEEDER DEBUG: Fixed NULL versions in green_wallets.");
+        } catch (Exception e) {
+            log.warn("Could not execute version fix script: {}", e.getMessage());
+        }
+
         initAdmin();
         initCollectors();
         initCitizen();

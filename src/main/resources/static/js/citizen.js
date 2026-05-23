@@ -18,9 +18,10 @@ document.addEventListener('alpine:init', () => {
         redeemPoints: '',
         redeemDescription: '',
         selectedRewardId: '',
+        selectedRewardIcon: '',
         redeemQuantity: 1,
         fulfillmentMethod: 'delivery',
-        selectedRewardPoints: 0,
+        selectedRewardPoints: null,
         rewardList: window.citizenServerData.rewards,
         rewardFilter: 'all',
         
@@ -385,18 +386,19 @@ init() {
                 Swal.fire({ icon: 'warning', title: 'Poin Tidak Valid', text: 'Silakan pilih hadiah dari katalog terlebih dahulu.', confirmButtonColor: '#f59e0b' });
                 return;
             }
-            if (this.redeemQuantity < 1) {
-                Swal.fire({ icon: 'warning', title: 'Kuantitas Tidak Valid', text: 'Minimal penukaran adalah 1 barang.', confirmButtonColor: '#f59e0b' });
-                return;
+            if (!this.redeemQuantity || this.redeemQuantity < 1) {
+                this.redeemQuantity = 1;
             }
             
-            const totalPoints = this.selectedRewardPoints * this.redeemQuantity;
+            const itemPoints  = this.selectedRewardPoints * this.redeemQuantity;
+            const ongkir      = this.fulfillmentMethod === 'delivery' ? 50 : 0;
+            const totalPoints = itemPoints + ongkir;
             
             if (totalPoints > window.citizenServerData.availablePoints) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Saldo Tidak Cukup',
-                    text: 'Poin Anda (' + window.citizenServerData.availablePoints.toLocaleString() + ' pts) tidak cukup untuk menukar ' + totalPoints.toLocaleString() + ' pts.',
+                    text: 'Poin Anda (' + window.citizenServerData.availablePoints.toLocaleString() + ' pts) tidak cukup untuk menukar ' + itemPoints.toLocaleString() + ' pts' + (ongkir > 0 ? ' + ongkir ' + ongkir + ' pts' : '') + '.',
                     confirmButtonColor: '#f59e0b'
                 });
                 return;
@@ -415,21 +417,124 @@ init() {
                 return;
             }
 
-            // totalPoints is already defined above
+            const methodText    = this.fulfillmentMethod === 'delivery' ? 'Kirim ke Rumah 🚚' : 'Ambil di Eco-Center 🏪';
+            const now           = new Date();
+            const dateStr       = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const timeStr       = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const invoiceNo     = 'TKR-' + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '-' + String(Math.floor(Math.random()*9000)+1000);
+
+            const receiptHtml = `
+                <div style="font-family:'Inter',sans-serif; text-align:left; margin: -8px -16px;">
+                    <!-- Header Struk -->
+                    <div style="background: linear-gradient(135deg,#f59e0b,#f97316); padding:20px 24px; text-align:center; border-radius:12px 12px 0 0;">
+                        <div style="font-size:28px; margin-bottom:4px;">🌿</div>
+                        <div style="color:white; font-size:18px; font-weight:900; letter-spacing:2px;">NETRA SPHERE</div>
+                        <div style="color:rgba(255,255,255,0.8); font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; margin-top:2px;">Struk Penukaran Poin</div>
+                    </div>
+
+                    <!-- Info Transaksi -->
+                    <div style="background:#fffbeb; padding:12px 24px; border-bottom:1px dashed #fcd34d; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-size:9px; color:#92400e; font-weight:700; text-transform:uppercase; letter-spacing:1px;">No. Invoice</div>
+                            <div style="font-size:11px; color:#1f2937; font-weight:800; font-family:monospace;">${invoiceNo}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:9px; color:#92400e; font-weight:700; text-transform:uppercase; letter-spacing:1px;">Tanggal</div>
+                            <div style="font-size:10px; color:#1f2937; font-weight:700;">${dateStr}</div>
+                            <div style="font-size:10px; color:#6b7280; font-weight:600;">${timeStr} WIB</div>
+                        </div>
+                    </div>
+
+                    <!-- Atas garis potong -->
+                    <div style="padding:0 24px; position:relative; height:16px; background:white;">
+                        <div style="position:absolute; left:0; right:0; top:50%; border-top:2px dashed #e5e7eb;"></div>
+                        <div style="position:absolute; left:-12px; top:0; width:24px; height:24px; background:#f3f4f6; border-radius:50%;"></div>
+                        <div style="position:absolute; right:-12px; top:0; width:24px; height:24px; background:#f3f4f6; border-radius:50%;"></div>
+                    </div>
+
+                    <!-- Detail Item -->
+                    <div style="padding:12px 24px 16px; background:white;">
+                        <div style="font-size:9px; color:#6b7280; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:10px;">Detail Item</div>
+                        <div style="display:flex; align-items:center; gap:12px; background:#fafafa; border-radius:12px; padding:12px;">
+                            <div style="font-size:28px; width:48px; height:48px; display:flex; align-items:center; justify-content:center; background:white; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.08); flex-shrink:0;">${this.selectedRewardIcon || '🎁'}</div>
+                            <div style="flex:1;">
+                                <div style="font-size:13px; font-weight:900; color:#111827; line-height:1.2;">${this.redeemDescription.toUpperCase()}</div>
+                                <div style="font-size:10px; color:#f59e0b; font-weight:700; margin-top:3px;">${this.selectedRewardPoints.toLocaleString()} pts / item</div>
+                            </div>
+                            <div style="text-align:right; flex-shrink:0;">
+                                <div style="font-size:11px; color:#6b7280; font-weight:700;">x ${this.redeemQuantity}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Breakdown Harga -->
+                    <div style="padding:0 24px 16px; background:white;">
+                        <div style="font-size:9px; color:#6b7280; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:10px;">Rincian Biaya</div>
+                        <div style="background:#f9fafb; border-radius:12px; overflow:hidden;">
+                            <div style="display:flex; justify-content:space-between; padding:10px 14px; border-bottom:1px solid #f3f4f6;">
+                                <span style="font-size:11px; color:#6b7280; font-weight:600;">Harga Barang (${this.redeemQuantity}x)</span>
+                                <span style="font-size:11px; color:#ef4444; font-weight:800;">- ${itemPoints.toLocaleString()} pts</span>
+                            </div>
+                            ${ongkir > 0 ? `
+                            <div style="display:flex; justify-content:space-between; padding:10px 14px; border-bottom:1px solid #f3f4f6;">
+                                <span style="font-size:11px; color:#6b7280; font-weight:600;">🚚 Biaya Ongkir</span>
+                                <span style="font-size:11px; color:#ef4444; font-weight:800;">- ${ongkir} pts</span>
+                            </div>` : `
+                            <div style="display:flex; justify-content:space-between; padding:10px 14px; border-bottom:1px solid #f3f4f6;">
+                                <span style="font-size:11px; color:#6b7280; font-weight:600;">🏪 Ambil Sendiri</span>
+                                <span style="font-size:11px; color:#10b981; font-weight:800;">Gratis</span>
+                            </div>`}
+                            <div style="display:flex; justify-content:space-between; padding:12px 14px; background:linear-gradient(135deg,#fffbeb,#fef3c7);">
+                                <span style="font-size:12px; color:#92400e; font-weight:900; text-transform:uppercase; letter-spacing:1px;">Total</span>
+                                <span style="font-size:14px; color:#f59e0b; font-weight:900;">- ${totalPoints.toLocaleString()} pts</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metode & Saldo -->
+                    <div style="padding:0 24px 16px; background:white; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div style="background:#f0fdf4; border-radius:10px; padding:10px 12px;">
+                            <div style="font-size:9px; color:#166534; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Metode</div>
+                            <div style="font-size:11px; color:#166534; font-weight:800;">${methodText}</div>
+                        </div>
+                        <div style="background:#fef2f2; border-radius:10px; padding:10px 12px;">
+                            <div style="font-size:9px; color:#991b1b; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Sisa Saldo</div>
+                            <div style="font-size:13px; color:#dc2626; font-weight:900;">${(window.citizenServerData.availablePoints - totalPoints).toLocaleString()} pts</div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="position:relative; padding:0 24px; height:16px; background:white;">
+                        <div style="position:absolute; left:0; right:0; top:50%; border-top:2px dashed #e5e7eb;"></div>
+                        <div style="position:absolute; left:-12px; top:0; width:24px; height:24px; background:#f3f4f6; border-radius:50%;"></div>
+                        <div style="position:absolute; right:-12px; top:0; width:24px; height:24px; background:#f3f4f6; border-radius:50%;"></div>
+                    </div>
+                    <div style="background:white; padding:14px 24px 4px; text-align:center; border-radius:0 0 12px 12px;">
+                        <div style="font-size:9px; color:#9ca3af; font-weight:600;">Terima kasih telah menukarkan poin Anda 🌿</div>
+                        <div style="font-size:9px; color:#d1d5db; margin-top:2px;">NetraSphere — Smart Community Waste System</div>
+                    </div>
+                </div>`;
+
             Swal.fire({
-                title: 'Konfirmasi Penukaran',
-                text: 'Apakah Anda yakin ingin menukar ' + totalPoints.toLocaleString() + ' poin untuk ' + this.redeemQuantity + 'x ' + this.redeemDescription + '?',
-                icon: 'question',
+                html: receiptHtml,
                 showCancelButton: true,
                 confirmButtonColor: '#f59e0b',
                 cancelButtonColor: '#9ca3af',
-                confirmButtonText: 'Ya, Tukar!',
-                cancelButtonText: 'Batal'
+                confirmButtonText: '✅ Ya, Tukar Sekarang!',
+                cancelButtonText: 'Batal',
+                width: '420px',
+                padding: '0',
+                borderRadius: '16px',
+                customClass: {
+                    popup: 'receipt-popup',
+                    confirmButton: 'receipt-confirm-btn',
+                    cancelButton: 'receipt-cancel-btn',
+                    actions: 'receipt-actions'
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
                     this.redeemPoints = totalPoints;
-                    const methodText = this.fulfillmentMethod === 'delivery' ? 'Kirim ke Rumah' : 'Ambil di Eco-Center';
-                    this.redeemDescription = this.redeemQuantity + 'x ' + this.redeemDescription + ' (' + methodText + ')';
+                    this.redeemDescription = this.redeemQuantity + 'x ' + this.redeemDescription + ' (' + (this.fulfillmentMethod === 'delivery' ? 'Kirim ke Rumah' : 'Ambil di Eco-Center') + ')';
                     
                     // Delay submit slightly to allow x-model to sync
                     setTimeout(() => {

@@ -377,3 +377,40 @@ body {
 .swal2-cancel {
     border-radius: 0.75rem !important;
 }
+
+/* ── Receipt / Struk Popup Override ────────────────────────── */
+.receipt-popup {
+    border-radius: 16px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+.receipt-popup .swal2-html-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+.receipt-popup .swal2-actions {
+    padding: 12px 24px 20px !important;
+    gap: 10px !important;
+    background: white !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+.receipt-popup .swal2-confirm {
+    flex: 1 !important;
+    padding: 12px 20px !important;
+    font-size: 12px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.05em !important;
+    border-radius: 12px !important;
+}
+
+.receipt-popup .swal2-cancel {
+    padding: 12px 20px !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    border-radius: 12px !important;
+}
