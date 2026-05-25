@@ -24,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.smartwaste.service.NotificationService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -64,6 +65,7 @@ public class CitizenWebController {
     private final ArticleService articleService;
     private final FaqService faqService;
     private final com.smartwaste.service.SmartBinService smartBinService;
+    private final NotificationService notificationService;
 
     public CitizenWebController(CitizenService citizenService,
                                 GreenWalletService walletService,
@@ -80,7 +82,8 @@ public class CitizenWebController {
                                 PickupRequestRepository pickupRequestRepository,
                                 ArticleService articleService,
                                 FaqService faqService,
-                                com.smartwaste.service.SmartBinService smartBinService) {
+                                com.smartwaste.service.SmartBinService smartBinService,
+                                NotificationService notificationService) {
         this.citizenService = citizenService;
         this.walletService = walletService;
         this.depositService = depositService;
@@ -97,6 +100,7 @@ public class CitizenWebController {
         this.articleService = articleService;
         this.faqService = faqService;
         this.smartBinService = smartBinService;
+        this.notificationService = notificationService;
     }
 
     @GetMapping("/dashboard")
@@ -104,10 +108,19 @@ public class CitizenWebController {
         String email = auth.getName();
 
         try {
+            java.util.List<com.smartwaste.entity.Notification> unreadNotifs = notificationService.getUnreadNotifications(email);
+            model.addAttribute("unreadNotifications", unreadNotifs);
+            model.addAttribute("unreadCount", unreadNotifs.size());
+        } catch (Exception e) {
+            model.addAttribute("unreadNotifications", java.util.List.of());
+            model.addAttribute("unreadCount", 0);
+        }
+
+        try {
             model.addAttribute("profile",    citizenService.getMyProfile(email));
             model.addAttribute("wallet",     walletService.getMyWallet(email));
         } catch (Exception e) {
-            model.addAttribute("errorMessage", "Gagal memuat profil Anda: " + e.getMessage());
+            model.addAttribute("errorMessage", "Gagal memuat profil Anda: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
             return "redirect:/auth/login";
         }
 
@@ -275,7 +288,7 @@ public class CitizenWebController {
             pickupRequestRepository.save(pickupRequest);
             redirectAttributes.addFlashAttribute("successMessage", "Permintaan penjemputan berhasil diajukan!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Gagal mengajukan penjemputan: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal mengajukan penjemputan: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/citizen/dashboard";
     }
@@ -301,7 +314,7 @@ public class CitizenWebController {
             depositService.createDeposit(auth.getName(), req);
             redirectAttributes.addFlashAttribute("successMessage", "Berhasil membuat setoran! Harap tunggu petugas mengkonfirmasi.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Gagal menyetor sampah: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal menyetor sampah: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/citizen/dashboard";
     }
@@ -316,7 +329,7 @@ public class CitizenWebController {
             walletService.requestRedemption(auth.getName(), points, description, rewardItemId);
             redirectAttributes.addFlashAttribute("successMessage", "Permintaan penukaran poin Anda berhasil diajukan dan menunggu persetujuan admin.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Gagal menukar poin: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal menukar poin: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/citizen/dashboard";
     }
@@ -336,7 +349,7 @@ public class CitizenWebController {
             }
             redirectAttributes.addFlashAttribute("successMessage", "Profil berhasil diperbarui!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Gagal memperbarui profil: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal memperbarui profil: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/citizen/dashboard";
     }
@@ -365,7 +378,19 @@ public class CitizenWebController {
                     .headers(headers)
                     .body(pdfBytes);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(("Error: " + e.getMessage()).getBytes());
+            return ResponseEntity.badRequest().body(("Error: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e)).getBytes());
         }
+    }
+
+    @PostMapping("/notifications/read-all")
+    public String markAllNotificationsRead(Authentication auth) {
+        notificationService.markAllAsRead(auth.getName());
+        return "redirect:/citizen/dashboard";
+    }
+
+    @PostMapping("/notifications/{id}/read")
+    public String markNotificationRead(@org.springframework.web.bind.annotation.PathVariable String id, Authentication auth) {
+        notificationService.markAsRead(id);
+        return "redirect:/citizen/dashboard";
     }
 }

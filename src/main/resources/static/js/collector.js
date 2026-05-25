@@ -285,8 +285,9 @@ function collectorDashboard() {
             if (!el || el._leaflet_id) return; // already initialized
             const map = L.map('map', { zoomControl: true, scrollWheelZoom: false })
                          .setView([-6.8975, 107.6350], 14);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
             }).addTo(map);
             setTimeout(() => map.invalidateSize(), 300);
 
@@ -324,8 +325,9 @@ function collectorDashboard() {
             const el = document.getElementById('fullMap');
             if (!el || el._leaflet_id) return; // already initialized
             const map = L.map('fullMap').setView([-6.8975, 107.6350], 15);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
             }).addTo(map);
             setTimeout(() => map.invalidateSize(), 300);
 
@@ -763,3 +765,14 @@ function collectorDashboard() {
         }
     };
 }
+
+
+        // Force Leaflet to recalculate multiple times during initial render
+        let resizeCount = 0;
+        const resizeInterval = setInterval(() => {
+            if (typeof map !== 'undefined' && map.invalidateSize) map.invalidateSize();
+            if (typeof fleetMap !== 'undefined' && fleetMap.invalidateSize) fleetMap.invalidateSize();
+            if (typeof b3Map !== 'undefined' && b3Map.invalidateSize) b3Map.invalidateSize();
+            resizeCount++;
+            if(resizeCount > 10) clearInterval(resizeInterval);
+        }, 300);

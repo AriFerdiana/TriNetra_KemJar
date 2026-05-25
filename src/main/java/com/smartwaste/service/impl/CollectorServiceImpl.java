@@ -143,4 +143,12 @@ public class CollectorServiceImpl implements CollectorService {
                 .createdAt(c.getCreatedAt())
                 .build();
     }
+
+    @Override
+    @Transactional
+    public void deleteCollector(String id) {
+        Collector collector = collectorRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Collector", "id", id));
+        collectorRepository.delete(collector);
+    }
 }

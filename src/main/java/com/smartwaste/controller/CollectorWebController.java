@@ -133,7 +133,7 @@ public class CollectorWebController {
                 model.addAttribute("unreadNotifCount", notificationRepository.countUnreadByCollectorId(collector.getId()));
             });
         } catch (Exception e) {
-            System.err.println("Error loading notifications: " + e.getMessage());
+            System.err.println("Error loading notifications: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
 
         // Feature D: Leaderboard
@@ -190,7 +190,7 @@ public class CollectorWebController {
             });
             return ResponseEntity.ok(java.util.Map.of("success", true, "available", newVal[0]));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(java.util.Map.of("success", false, "message", e.getMessage()));
+            return ResponseEntity.status(500).body(java.util.Map.of("success", false, "message", com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e)));
         }
     }
 
@@ -209,7 +209,7 @@ public class CollectorWebController {
             depositService.confirmDeposit(id, userDetails.getUsername(), finalUrl);
             redirectAttributes.addFlashAttribute("successMessage", "Setoran berhasil dikonfirmasi dan poin telah disalurkan.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Gagal konfirmasi: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal konfirmasi: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/collector/dashboard";
     }
@@ -224,7 +224,7 @@ public class CollectorWebController {
             depositService.rejectDeposit(id, userDetails.getUsername(), reason);
             redirectAttributes.addFlashAttribute("successMessage", "Setoran berhasil ditolak.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Gagal menolak setoran: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal menolak setoran: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/collector/dashboard";
     }
@@ -296,7 +296,7 @@ public class CollectorWebController {
             depositService.createManualDeposit(userDetails.getUsername(), citizenId, categoryId, weightKg, notes);
             ra.addFlashAttribute("successMessage", "Setoran manual berhasil dicatat dan poin telah dikreditkan.");
         } catch (Exception e) {
-            ra.addFlashAttribute("errorMessage", "Gagal mencatat setoran manual: " + e.getMessage());
+            ra.addFlashAttribute("errorMessage", "Gagal mencatat setoran manual: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/collector/dashboard";
     }
@@ -355,7 +355,7 @@ public class CollectorWebController {
             });
             ra.addFlashAttribute("successMessage", "Profil berhasil diperbarui.");
         } catch (Exception e) {
-            ra.addFlashAttribute("errorMessage", "Gagal update profil: " + e.getMessage());
+            ra.addFlashAttribute("errorMessage", "Gagal update profil: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/collector/dashboard";
     }
@@ -371,7 +371,7 @@ public class CollectorWebController {
             });
             return ResponseEntity.ok(java.util.Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(java.util.Map.of("success", false, "message", e.getMessage()));
+            return ResponseEntity.status(500).body(java.util.Map.of("success", false, "message", com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e)));
         }
     }
 
@@ -406,7 +406,7 @@ public class CollectorWebController {
             });
             ra.addFlashAttribute("successMessage", "Laporan lapangan berhasil dikirim.");
         } catch (Exception e) {
-            ra.addFlashAttribute("errorMessage", "Gagal mengirim laporan: " + e.getMessage());
+            ra.addFlashAttribute("errorMessage", "Gagal mengirim laporan: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/collector/dashboard";
     }

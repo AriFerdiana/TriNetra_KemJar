@@ -6,14 +6,34 @@ function adminDashboard() {
         isSidebarCollapsed: false,
         activeTab: urlParams.get('activeTab') || 'overview',
 
+        init() {
+            this.$watch('activeTab', () => {
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 150);
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 500);
+            });
+            // Also trigger initially in case map is on default tab
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 500);
+        },
+
         // ── Modal visibility flags ──────────────────────────
         showAddCategoryModal:        false,
         showEditCategoryModal:       false,
         showImportModal:             false,
         showPasswordModal:           false,
         showRegisterCollectorModal:  false,
+        showEditCollectorModal:      false,
+        showDeleteCollectorModal:    false,
         showApproveModal:            false,
         showRejectModal:             false,
+        showAddCitizenModal:         false,
+        showEditCitizenModal:        false,
+        showDeleteCitizenModal:      false,
         showCitizenDetailModal:      false,
         showDeleteCategoryModal:     false,
         showAddRewardModal:          false,
@@ -50,13 +70,37 @@ function adminDashboard() {
         selectedDeleteCategory:  { id: '', name: '' },
         editingReward:           { id: '', name: '', description: '', icon: '🎁', pointsCost: 0, stock: -1, requiredLevel: 'Green Starter', isPopular: false },
         selectedDeleteReward:    { id: '', name: '' },
+        editingCollector:        { id: '', name: '', phone: '', vehicleNumber: '', assignedArea: '' },
+        selectedDeleteCollector: { id: '', name: '' },
+        editingCitizen:          { id: '', name: '', email: '', nik: '', phone: '', address: '', rtRw: '', kelurahan: '' },
+        selectedDeleteCitizen:   { id: '', name: '' },
         selectedCitizen:         { name:'', email:'', nik:'', phone:'', address:'', totalDeposits:0, totalPoints:0, availablePoints:0 },
         selectedReport:          { id: '', title: '', collector: '' },
 
         // ── Helper Methods ───────────────────────────────────
+
+        openEditCitizen(id, name, email, nik, phone, address, rtrw, kelurahan) {
+            this.editingCitizen = { id, name, email, nik: nik||'', phone: phone||'', address: address||'', rtRw: rtrw||'', kelurahan: kelurahan||'' };
+            this.showEditCitizenModal = true;
+        },
+
+        openDeleteCitizen(id, name) {
+            this.selectedDeleteCitizen = { id, name };
+            this.showDeleteCitizenModal = true;
+        },
         openCitizenDetail(name, email, nik, phone, address, totalDeposits, totalPoints, availablePoints) {
             this.selectedCitizen = { name, email, nik, phone, address, totalDeposits, totalPoints, availablePoints };
             this.showCitizenDetailModal = true;
+        },
+
+        
+        openDeleteCollector(id, name) {
+            this.selectedDeleteCollector = { id, name };
+            this.showDeleteCollectorModal = true;
+        },
+openEditCollector(id, name, phone, vehicle, area) {
+            this.editingCollector = { id, name, phone, vehicleNumber: vehicle, assignedArea: area };
+            this.showEditCollectorModal = true;
         },
 
         openApproveModal(id) {
@@ -442,12 +486,27 @@ document.addEventListener('DOMContentLoaded', function () {
             scrollWheelZoom: false // nonaktifkan agar halaman scrolling nyaman
         });
         
-        // Tile style premium "Voyager" CartoDB
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20
+        
+        // Fix Leaflet grey screen bug when map container size changes (e.g. from hidden to visible tab)
+        setTimeout(() => { map.invalidateSize(); }, 500);
+        const resizeObserver = new ResizeObserver(() => {
+            map.invalidateSize();
+        });
+        resizeObserver.observe(mapEl);
+
+        // Tile style OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
         }).addTo(map);
+
+        // Force Leaflet to recalculate multiple times during initial render
+        let resizeCount = 0;
+        const resizeInterval = setInterval(() => {
+            map.invalidateSize();
+            resizeCount++;
+            if(resizeCount > 10) clearInterval(resizeInterval);
+        }, 300);
         
         // Tambahkan Marker dinamis sesuai fill level
         smartBins.forEach(bin => {

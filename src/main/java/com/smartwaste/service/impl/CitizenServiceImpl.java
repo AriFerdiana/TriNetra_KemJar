@@ -137,6 +137,65 @@ public class CitizenServiceImpl implements CitizenService {
         citizenRepository.save(citizen);
     }
 
+
+    @Override
+    @Transactional
+    public CitizenProfileResponse createCitizen(String name, String email, String password, String nik, String phone, String address, String rtRw, String kelurahan) {
+        if (citizenRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("Email sudah terdaftar!");
+        }
+        
+        Citizen citizen = new Citizen();
+        citizen.setName(name);
+        citizen.setEmail(email);
+        citizen.setPassword(passwordEncoder.encode(password));
+        citizen.setNik(nik != null && !nik.trim().isEmpty() ? nik : null);
+        citizen.setPhone(phone != null && !phone.trim().isEmpty() ? phone : null);
+        citizen.setAddress(address);
+        citizen.setRtRw(rtRw);
+        citizen.setKelurahan(kelurahan);
+        citizen.setActive(true);
+        
+        Citizen saved = citizenRepository.save(citizen);
+        
+        GreenWallet wallet = new GreenWallet(saved);
+        greenWalletRepository.save(wallet);
+        
+        return mapToResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public CitizenProfileResponse adminUpdateCitizen(String citizenId, String name, String email, String nik, String phone, String address, String rtRw, String kelurahan) {
+        Citizen citizen = citizenRepository.findById(citizenId)
+                .orElseThrow(() -> new ResourceNotFoundException("Citizen", "id", citizenId));
+                
+        // Check if email changed and is available
+        if (email != null && !email.isBlank() && !email.equals(citizen.getEmail())) {
+            if (citizenRepository.existsByEmail(email)) {
+                throw new IllegalArgumentException("Email sudah terdaftar!");
+            }
+            citizen.setEmail(email);
+        }
+        
+        if (name != null && !name.isBlank()) citizen.setName(name);
+        if (nik != null) citizen.setNik(nik);
+        if (phone != null) citizen.setPhone(phone);
+        if (address != null) citizen.setAddress(address);
+        if (rtRw != null) citizen.setRtRw(rtRw);
+        if (kelurahan != null) citizen.setKelurahan(kelurahan);
+        
+        return mapToResponse(citizenRepository.save(citizen));
+    }
+
+    @Override
+    @Transactional
+    public void deleteCitizen(String citizenId) {
+        Citizen citizen = citizenRepository.findById(citizenId)
+                .orElseThrow(() -> new ResourceNotFoundException("Citizen", "id", citizenId));
+        citizenRepository.delete(citizen);
+    }
+
     /** Mapper: Citizen entity → CitizenProfileResponse DTO (Encapsulation) */
     private CitizenProfileResponse mapToResponse(Citizen citizen) {
         GreenWallet wallet = greenWalletRepository.findByCitizen(citizen).orElse(null);

@@ -56,6 +56,12 @@ spring:
           starttls:
             enable: true
 
+  # ===== MULTIPART / FILE UPLOAD =====
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
 # ===== SERVER CONFIGURATION =====
 server:
   port: 8080
@@ -65,6 +71,8 @@ server:
       charset: UTF-8
       enabled: true
       force: true
+
+  # ===== MULTIPART / FILE UPLOAD =====
 
 # ===== CUSTOM APPLICATION PROPERTIES =====
 app:

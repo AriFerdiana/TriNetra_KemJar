@@ -116,7 +116,7 @@ public class AdminWebController {
             adminLogService.log("CHANGE_PASSWORD", "Admin mengubah password", request.getRemoteAddr());
             ra.addFlashAttribute("successMessage", "Password berhasil diubah");
         } catch (Exception e) {
-            ra.addFlashAttribute("errorMessage", "Gagal mengubah password: " + e.getMessage());
+            ra.addFlashAttribute("errorMessage", "Gagal mengubah password: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard";
     }
@@ -135,7 +135,7 @@ public class AdminWebController {
             adminLogService.log("DELETE_DEPOSIT", "Menghapus setoran ID: " + id, request.getRemoteAddr());
             ra.addFlashAttribute("successMessage", "Setoran berhasil dihapus");
         } catch (Exception e) {
-            ra.addFlashAttribute("errorMessage", "Gagal menghapus setoran: " + e.getMessage());
+            ra.addFlashAttribute("errorMessage", "Gagal menghapus setoran: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=deposits";
     }
@@ -309,7 +309,7 @@ public class AdminWebController {
                     "✅ Kategori '" + name + "' berhasil ditambahkan.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "❌ Gagal menambah kategori: " + e.getMessage());
+                    "❌ Gagal menambah kategori: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=categories";
     }
@@ -322,7 +322,7 @@ public class AdminWebController {
             redirectAttributes.addFlashAttribute("successMessage", "✅ Status kategori berhasil diubah.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "❌ Gagal mengubah status kategori: " + e.getMessage());
+                    "❌ Gagal mengubah status kategori: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=categories";
     }
@@ -339,7 +339,7 @@ public class AdminWebController {
                     "✅ Kategori berhasil diperbarui.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "❌ Gagal memperbarui kategori: " + e.getMessage());
+                    "❌ Gagal memperbarui kategori: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=categories";
     }
@@ -356,9 +356,9 @@ public class AdminWebController {
             adminLogService.log("DELETE_CATEGORY", "ID: " + id, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ Kategori berhasil dihapus.");
         } catch (IllegalStateException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menghapus kategori: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menghapus kategori: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=categories";
     }
@@ -369,6 +369,67 @@ public class AdminWebController {
      * Toggle status aktif/nonaktif warga (dua arah — bisa reaktivasi).
      * FIX Bug #2: Sebelumnya hanya bisa nonaktifkan, sekarang toggle dua arah.
      */
+
+    // ==========================================
+    // CITIZENS - FULL CRUD (ADDED)
+    // ==========================================
+
+    @PostMapping("/citizens")
+    public String addCitizen(@RequestParam String name,
+                             @RequestParam String email,
+                             @RequestParam String password,
+                             @RequestParam(required = false) String nik,
+                             @RequestParam(required = false) String phone,
+                             @RequestParam(required = false) String address,
+                             @RequestParam(required = false) String rtRw,
+                             @RequestParam(required = false) String kelurahan,
+                             jakarta.servlet.http.HttpServletRequest request,
+                             RedirectAttributes redirectAttributes) {
+        try {
+            citizenService.createCitizen(name, email, password, nik, phone, address, rtRw, kelurahan);
+            adminLogService.log("CREATE_CITIZEN", "Membuat akun warga baru: " + name, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("successMessage", "Akun warga berhasil dibuat!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
+        }
+        return "redirect:/admin/dashboard?activeTab=citizens";
+    }
+
+    @PostMapping("/citizens/{id}/edit")
+    public String editCitizen(@PathVariable String id,
+                              @RequestParam String name,
+                              @RequestParam String email,
+                              @RequestParam(required = false) String nik,
+                              @RequestParam(required = false) String phone,
+                              @RequestParam(required = false) String address,
+                              @RequestParam(required = false) String rtRw,
+                              @RequestParam(required = false) String kelurahan,
+                              jakarta.servlet.http.HttpServletRequest request,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            citizenService.adminUpdateCitizen(id, name, email, nik, phone, address, rtRw, kelurahan);
+            adminLogService.log("UPDATE_CITIZEN", "Memperbarui profil warga: " + name, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("successMessage", "Profil warga berhasil diperbarui!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
+        }
+        return "redirect:/admin/dashboard?activeTab=citizens";
+    }
+
+    @PostMapping("/citizens/{id}/delete")
+    public String deleteCitizen(@PathVariable String id, 
+                                jakarta.servlet.http.HttpServletRequest request,
+                                RedirectAttributes redirectAttributes) {
+        try {
+            citizenService.deleteCitizen(id);
+            adminLogService.log("DELETE_CITIZEN", "Menghapus data warga dengan ID: " + id, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("successMessage", "Data warga berhasil dihapus secara permanen!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
+        }
+        return "redirect:/admin/dashboard?activeTab=citizens";
+    }
+
     @PostMapping("/citizens/{id}/toggle")
     public String toggleCitizen(@PathVariable String id,
                                 @RequestParam(defaultValue = "0") int page,
@@ -381,7 +442,7 @@ public class AdminWebController {
             redirectAttributes.addFlashAttribute("successMessage", "✅ Status warga berhasil diubah.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "❌ Gagal mengubah status warga: " + e.getMessage());
+                    "❌ Gagal mengubah status warga: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=citizens&page=" + page + "&search=" + search;
     }
@@ -408,7 +469,7 @@ public class AdminWebController {
             adminLogService.log("RESET_CITIZEN_PASSWORD", "ID: " + id, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ Password warga berhasil di-reset menjadi 'netra123'.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal reset password: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal reset password: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=citizens";
     }
@@ -445,7 +506,7 @@ public class AdminWebController {
                     "❌ Email '" + email + "' sudah terdaftar dalam sistem.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "❌ Gagal mendaftarkan petugas: " + e.getMessage());
+                    "❌ Gagal mendaftarkan petugas: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=collectors";
     }
@@ -453,6 +514,19 @@ public class AdminWebController {
     /**
      * Toggle aktif/nonaktif petugas collector.
      */
+    
+    @PostMapping("/collectors/{id}/delete")
+    public String deleteCollector(@PathVariable String id, jakarta.servlet.http.HttpServletRequest request, RedirectAttributes redirectAttributes) {
+        try {
+            collectorService.deleteCollector(id);
+            adminLogService.log("DELETE_COLLECTOR", "Menghapus petugas dengan ID: " + id, request.getRemoteAddr());
+            redirectAttributes.addFlashAttribute("successMessage", "Data petugas berhasil dihapus!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal menghapus petugas: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
+        }
+        return "redirect:/admin/dashboard?activeTab=collectors";
+    }
+
     @PostMapping("/collectors/{id}/toggle")
     public String toggleCollector(@PathVariable String id,
                                   jakarta.servlet.http.HttpServletRequest request,
@@ -465,7 +539,7 @@ public class AdminWebController {
                     "✅ Status petugas berhasil diubah.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "❌ Gagal mengubah status petugas: " + e.getMessage());
+                    "❌ Gagal mengubah status petugas: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=collectors";
     }
@@ -489,7 +563,7 @@ public class AdminWebController {
                     "✅ Data petugas berhasil diperbarui.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "❌ Gagal memperbarui data petugas: " + e.getMessage());
+                    "❌ Gagal memperbarui data petugas: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=collectors";
     }
@@ -503,7 +577,7 @@ public class AdminWebController {
             adminLogService.log("RESET_COLLECTOR_PASSWORD", "ID: " + id, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ Password petugas berhasil di-reset menjadi 'netra123'.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal reset password: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal reset password: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=collectors";
     }
@@ -527,7 +601,7 @@ public class AdminWebController {
                     "✅ Penukaran poin berhasil disetujui!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "❌ Gagal menyetujui penukaran: " + e.getMessage());
+                    "❌ Gagal menyetujui penukaran: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=redemptions";
     }
@@ -549,7 +623,7 @@ public class AdminWebController {
                     "✅ Penukaran poin berhasil ditolak.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "❌ Gagal menolak penukaran: " + e.getMessage());
+                    "❌ Gagal menolak penukaran: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=redemptions";
     }
@@ -572,7 +646,7 @@ public class AdminWebController {
                     "Nama: " + name + ", Poin: " + pointsCost, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ Reward '" + name + "' berhasil ditambahkan ke katalog.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menambah reward: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menambah reward: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=rewards";
     }
@@ -594,7 +668,7 @@ public class AdminWebController {
                     "ID: " + id + ", Nama: " + name, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ Reward berhasil diperbarui.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal memperbarui reward: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal memperbarui reward: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=rewards";
     }
@@ -609,7 +683,7 @@ public class AdminWebController {
                     "ID: " + id, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ Status reward berhasil diubah.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal mengubah status reward: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal mengubah status reward: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=rewards";
     }
@@ -624,9 +698,9 @@ public class AdminWebController {
                     "ID: " + id, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ Reward berhasil dihapus dari katalog.");
         } catch (IllegalStateException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menghapus reward: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menghapus reward: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=rewards";
     }
@@ -656,7 +730,7 @@ public class AdminWebController {
                     "Judul: " + title, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ Berita '" + title + "' berhasil diterbitkan.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menerbitkan berita: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menerbitkan berita: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=articles";
     }
@@ -683,7 +757,7 @@ public class AdminWebController {
                     "ID: " + id + ", Judul: " + title, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ Berita berhasil diperbarui.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal memperbarui berita: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal memperbarui berita: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=articles";
     }
@@ -698,7 +772,7 @@ public class AdminWebController {
                     "ID: " + id, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ Berita berhasil dihapus.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menghapus berita: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menghapus berita: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=articles";
     }
@@ -723,7 +797,7 @@ public class AdminWebController {
                     "Tanya: " + question, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ FAQ berhasil ditambahkan.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menambah FAQ: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menambah FAQ: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=faqs";
     }
@@ -745,7 +819,7 @@ public class AdminWebController {
                     "ID: " + id, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ FAQ berhasil diperbarui.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal memperbarui FAQ: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal memperbarui FAQ: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=faqs";
     }
@@ -760,7 +834,7 @@ public class AdminWebController {
                     "ID: " + id, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ Status FAQ berhasil diubah.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal mengubah status FAQ: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal mengubah status FAQ: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=faqs";
     }
@@ -775,7 +849,7 @@ public class AdminWebController {
                     "ID: " + id, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ FAQ berhasil dihapus.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menghapus FAQ: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menghapus FAQ: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=faqs";
     }
@@ -794,7 +868,7 @@ public class AdminWebController {
                     "Judul: " + title + ", Tipe: " + type, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ Pengumuman berhasil dikirim ke seluruh warga.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal mengirim pengumuman: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal mengirim pengumuman: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=overview";
     }
@@ -812,7 +886,7 @@ public class AdminWebController {
                     "ID: " + id + ", Resolution: " + resolution, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("successMessage", "✅ Laporan berhasil diselesaikan.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menyelesaikan laporan: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Gagal menyelesaikan laporan: " + com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
         }
         return "redirect:/admin/dashboard?activeTab=reports";
     }

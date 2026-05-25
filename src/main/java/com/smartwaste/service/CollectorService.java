@@ -38,4 +38,5 @@ public interface CollectorService {
     long countActive();
 
     void resetPassword(String collectorId, String newPassword);
+    void deleteCollector(String id);
 }

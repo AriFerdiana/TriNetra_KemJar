@@ -749,25 +749,6 @@ init() {
             };
         },
 
-        // Eco Glossary
-        ecoGlossary() {
-            return {
-                isOpen: false,
-                current: 0,
-                items: [
-                    { term: 'Upcycling', definition: 'Proses kreatif mengubah barang bekas menjadi produk baru yang memiliki nilai estetika atau fungsional lebih tinggi.' },
-                    { term: 'Komposting', definition: 'Proses penguraian bahan organik secara biologis menjadi humus (kompos) yang menyuburkan tanah.' },
-                    { term: 'Jejak Karbon', definition: 'Total emisi gas rumah kaca yang dihasilkan oleh individu, organisasi, atau produk dalam jangka waktu tertentu.' },
-                    { term: 'Zero Waste', definition: 'Filosofi gaya hidup untuk meminimalkan produksi sampah agar tidak ada yang berakhir di TPA atau lingkungan.' },
-                    { term: 'B3', definition: 'Bahan Berbahaya dan Beracun yang memerlukan penanganan khusus agar tidak mencemari lingkungan.' },
-                    { term: 'Biodegradable', definition: 'Bahan yang dapat terurai secara alami oleh mikroorganisme dalam waktu yang relatif singkat.' }
-                ],
-                open(index) {
-                    this.current = index;
-                    this.isOpen = true;
-                }
-            };
-        }
     }));
 });
 
@@ -777,10 +758,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (mapElement) {
         const map = L.map('smartBinMap').setView([-6.8961, 107.6356], 14);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
         }).addTo(map);
 
         // ── Icon Factories ──────────────────────────────────────
@@ -869,14 +849,23 @@ document.addEventListener('DOMContentLoaded', function() {
                      </div>`
                 );
         });
+
+        // Trigger resize when container becomes visible
+        const smartBinResizeObserver = new ResizeObserver(() => {
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        });
+        smartBinResizeObserver.observe(mapElement);
     }
 
     // Initialize B3 Drop-Off Map
     const b3MapElement = document.getElementById('b3DropOffMap');
     if (b3MapElement) {
         const b3Map = L.map('b3DropOffMap').setView([-6.8961, 107.6356], 14);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OSM contributors'
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19
         }).addTo(b3Map);
 
         const b3Locations = [
@@ -895,6 +884,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
             }).addTo(b3Map).bindPopup(`<b>${loc.name}</b><br>Siap menerima limbah B3.`);
         });
+
+        // Trigger resize when container becomes visible
+        const resizeObserver = new ResizeObserver(() => {
+            setTimeout(() => {
+                b3Map.invalidateSize();
+            }, 100);
+        });
+        resizeObserver.observe(b3MapElement);
+    }
+
+    // Initialize Fleet Tracker Map
+    const fleetTrackerElement = document.getElementById('fleetTrackerMap');
+    if (fleetTrackerElement) {
+        const fleetMap = L.map('fleetTrackerMap', {
+            zoomControl: false,
+            dragging: false,
+            scrollWheelZoom: false,
+            doubleClickZoom: false,
+            boxZoom: false
+        }).setView([-6.9175, 107.6191], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(fleetMap);
+
+        // ResizeObserver to handle modal display:none to display:block transition
+        const fleetResizeObserver = new ResizeObserver(() => {
+            setTimeout(() => {
+                fleetMap.invalidateSize();
+            }, 100);
+        });
+        fleetResizeObserver.observe(fleetTrackerElement);
     }
 
     // Initialize Charts if data is available
@@ -970,3 +992,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+
+        // Force Leaflet to recalculate multiple times during initial render
+        let resizeCount = 0;
+        const resizeInterval = setInterval(() => {
+            if (typeof map !== 'undefined' && map.invalidateSize) map.invalidateSize();
+            if (typeof fleetMap !== 'undefined' && fleetMap.invalidateSize) fleetMap.invalidateSize();
+            if (typeof b3Map !== 'undefined' && b3Map.invalidateSize) b3Map.invalidateSize();
+            resizeCount++;
+            if(resizeCount > 10) clearInterval(resizeInterval);
+        }, 300);

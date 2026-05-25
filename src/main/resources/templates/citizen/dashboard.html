@@ -70,6 +70,53 @@
                 </button>
             </div>
 
+            <!-- NOTIFICATION BELL -->
+            <div class="relative" x-data="{ notifOpen: false }">
+                <button type="button" @click="notifOpen = !notifOpen" class="relative w-10 h-10 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-emerald-600 rounded-2xl flex items-center justify-center transition-all">
+                    <span class="text-xl">🔔</span>
+                    <span th:if="${unreadCount > 0}" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white" th:text="${unreadCount}">3</span>
+                </button>
+                
+                <!-- Notif Dropdown -->
+                <div x-show="notifOpen" @click.away="notifOpen = false" style="display: none;" class="absolute right-0 mt-3 w-80 bg-white rounded-3xl shadow-2xl border border-gray-100 z-50 overflow-hidden"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-2 scale-95">
+                     
+                     <div class="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                         <h4 class="font-black text-gray-900 text-sm">Notifikasi Baru</h4>
+                         <form th:if="${unreadCount > 0}" th:action="@{/citizen/notifications/read-all}" method="POST" class="m-0">
+                             <button type="submit" class="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg">Tandai Semua Dibaca</button>
+                         </form>
+                     </div>
+                     
+                     <div class="max-h-80 overflow-y-auto">
+                         <div th:if="${unreadCount == 0}" class="p-6 text-center text-gray-400 text-xs font-bold">
+                             Tidak ada notifikasi baru.
+                         </div>
+                         <div th:each="n : ${unreadNotifications}" class="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors flex gap-3 relative group">
+                             <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center"
+                                  th:classappend="${n.type == 'INFO' ? 'bg-blue-100 text-blue-500' : (n.type == 'SUCCESS' ? 'bg-emerald-100 text-emerald-500' : (n.type == 'WARNING' ? 'bg-amber-100 text-amber-500' : 'bg-red-100 text-red-500'))}">
+                                 <span th:text="${n.type == 'INFO' ? 'ℹ️' : (n.type == 'SUCCESS' ? '✅' : (n.type == 'WARNING' ? '⚠️' : '🚨'))}">ℹ️</span>
+                             </div>
+                             <div class="flex-1 min-w-0">
+                                 <p class="text-xs font-bold text-gray-900 mb-0.5 truncate" th:text="${n.title}">Judul</p>
+                                 <p class="text-[11px] text-gray-500 leading-tight mb-2" th:text="${n.message}">Pesan</p>
+                                 <p class="text-[9px] text-gray-400 font-bold" th:text="${#temporals.format(n.createdAt, 'dd MMM HH:mm')}">Waktu</p>
+                             </div>
+                             <form th:action="@{'/citizen/notifications/' + ${n.id} + '/read'}" method="POST" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                 <button type="submit" class="w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-100 text-gray-400 hover:text-emerald-500 shadow-sm" title="Tandai dibaca">
+                                     ✓
+                                 </button>
+                             </form>
+                         </div>
+                     </div>
+                </div>
+            </div>
+
             <div class="relative">
                 <button type="button" @click="profileMenuOpen=!profileMenuOpen" class="flex items-center gap-3 group">
                     <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center font-black text-sm group-hover:bg-emerald-200 transition-colors">
@@ -726,6 +773,7 @@
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Foto Bukti</label>
                                 <input type="file" name="file" accept="image/*"
                                        class="w-full bg-gray-50/50 border-2 border-gray-100 rounded-xl px-3 py-2 text-[10px] outline-none focus:border-emerald-500 focus:bg-white transition-all file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[9px] file:font-black file:uppercase file:bg-emerald-50 file:text-emerald-700 cursor-pointer">
+                                <p class="text-[10px] text-red-500 font-semibold mt-1">Maks. ukuran file 5MB</p>
                             </div>
                         </div>
 
@@ -867,7 +915,7 @@
                     </div>
 
                     <!-- Grid Catalog -->
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto pr-2 scroll-smooth custom-scrollbar">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto pr-2 scroll-smooth custom-scrollbar">
                         <template x-for="reward in filteredRewards" :key="reward.id">
                             <div class="animate-slide-up h-full">
                                 <!-- Setup for checking if locked based on level -->
@@ -1323,39 +1371,23 @@
                 <!-- Compact Map -->
                 <div class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-gray-100">
                     <h4 class="font-black text-sm text-gray-900 mb-4 flex items-center gap-2">🗺️ Titik Drop-Off B3</h4>
-                    <div id="b3DropOffMap" class="w-full h-40 rounded-2xl z-0 border-2 border-gray-50 shadow-inner"></div>
+                    <div id="b3DropOffMap" class="w-full h-80 rounded-2xl z-0 border-2 border-gray-50 shadow-inner"></div>
                 </div>
 
-                <!-- Compact Glossary -->
-                <div x-data="ecoGlossary()" class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-emerald-50">
-                    <h4 class="font-black text-sm text-gray-900 mb-4 flex items-center gap-2">🔖 Kamus Hijau</h4>
-                    <div class="flex flex-wrap gap-2">
-                        <template x-for="(item, index) in items" :key="index">
-                            <button @click="open(index)" class="px-3 py-1.5 bg-gray-50 hover:bg-emerald-600 text-gray-600 hover:text-white rounded-lg text-[8px] font-black uppercase tracking-widest transition-all" x-text="item.term"></button>
-                        </template>
-                    </div>
-                    <!-- Glossary Modal -->
-                    <div x-show="isOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-gray-900/40 backdrop-blur-sm" x-transition x-cloak>
-                        <div class="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl relative overflow-hidden text-center" @click.away="isOpen = false">
-                            <h5 class="text-2xl font-black text-emerald-900 mb-2" x-text="items[current]?.term"></h5>
-                            <p class="text-gray-500 text-xs leading-relaxed font-medium" x-text="items[current]?.definition"></p>
-                            <button @click="isOpen = false" class="mt-8 w-full bg-gray-900 text-white py-3 rounded-xl font-black text-xs hover:bg-gray-800 transition-all">Tutup</button>
-                        </div>
-                    </div>
-                </div>
+
             </div>
         </div>
 
         <!-- FULL WIDTH: Educational Modules -->
         <div class="mb-12">
             <h4 class="font-black text-2xl text-gray-900 mb-6 px-2 flex items-center gap-3">📚 Modul Edukasi Kategori</h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Organik -->
                 <div class="bg-emerald-50/50 rounded-[2.5rem] p-8 border border-emerald-100 flex items-start gap-6">
                     <div class="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-emerald-200">🌿</div>
                     <div>
                         <h4 class="font-black text-gray-900 text-lg mb-2">Organik</h4>
-                        <p class="text-[11px] text-gray-500 leading-relaxed font-medium mb-4">Dapat terurai alami. Ubah sisa makanan jadi kompos subur!</p>
+                        <p class="text-[11px] text-gray-500 leading-relaxed font-medium mb-4">Dapat terurai secara alami oleh mikroorganisme. Sisa makanan dan dedaunan bisa diolah menjadi pupuk kompos yang sangat menyuburkan tanah dan mengurangi timbulan sampah basah di TPA.</p>
                         <div class="flex flex-wrap gap-2">
                             <span class="text-[9px] font-black text-emerald-700 bg-emerald-100 px-3 py-1 rounded-lg uppercase">Sisa Makanan</span>
                             <span class="text-[9px] font-black text-emerald-700 bg-emerald-100 px-3 py-1 rounded-lg uppercase">Dedaunan</span>
@@ -1367,7 +1399,7 @@
                     <div class="w-14 h-14 bg-blue-500 text-white rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-blue-200">♻️</div>
                     <div>
                         <h4 class="font-black text-gray-900 text-lg mb-2">Anorganik</h4>
-                        <p class="text-[11px] text-gray-500 leading-relaxed font-medium mb-4">Sulit terurai. Daur ulang botol & kertas jadi barang berguna!</p>
+                        <p class="text-[11px] text-gray-500 leading-relaxed font-medium mb-4">Sampah kering yang membutuhkan ratusan tahun untuk terurai. Dengan mendaur ulang botol plastik, kaca, kertas, dan kardus, kita dapat mengurangi polusi dan menciptakan produk bernilai jual baru.</p>
                         <div class="flex flex-wrap gap-2">
                             <span class="text-[9px] font-black text-blue-700 bg-blue-100 px-3 py-1 rounded-lg uppercase">Plastik</span>
                             <span class="text-[9px] font-black text-blue-700 bg-blue-100 px-3 py-1 rounded-lg uppercase">Kertas</span>
@@ -1379,10 +1411,22 @@
                     <div class="w-14 h-14 bg-rose-500 text-white rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-rose-200">⚠️</div>
                     <div>
                         <h4 class="font-black text-gray-900 text-lg mb-2">Bahan B3</h4>
-                        <p class="text-[11px] text-gray-500 leading-relaxed font-medium mb-4">Beracun & Berbahaya. Perlu penanganan khusus agar aman.</p>
+                        <p class="text-[11px] text-gray-500 leading-relaxed font-medium mb-4">Limbah Berbahaya dan Beracun yang mengandung zat kimia mematikan. Jangan pernah mencampur baterai, aki, atau lampu dengan sampah biasa karena dapat mencemari air tanah dan kesehatan kita.</p>
                         <div class="flex flex-wrap gap-2">
                             <span class="text-[9px] font-black text-rose-700 bg-rose-100 px-3 py-1 rounded-lg uppercase">Baterai</span>
                             <span class="text-[9px] font-black text-rose-700 bg-rose-100 px-3 py-1 rounded-lg uppercase">Lampu LED</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Elektronik -->
+                <div class="bg-purple-50/50 rounded-[2.5rem] p-8 border border-purple-100 flex items-start gap-6">
+                    <div class="w-14 h-14 bg-purple-500 text-white rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-purple-200">🔌</div>
+                    <div>
+                        <h4 class="font-black text-gray-900 text-lg mb-2">Elektronik</h4>
+                        <p class="text-[11px] text-gray-500 leading-relaxed font-medium mb-4">Berupa peralatan listrik, gadget rusak, atau e-waste. Walaupun mengandung komponen logam mulia, bahan di dalamnya beracun dan wajib ditangani secara khusus oleh pihak daur ulang bersertifikat.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-[9px] font-black text-purple-700 bg-purple-100 px-3 py-1 rounded-lg uppercase">Kabel</span>
+                            <span class="text-[9px] font-black text-purple-700 bg-purple-100 px-3 py-1 rounded-lg uppercase">Gadget</span>
                         </div>
                     </div>
                 </div>
@@ -1401,7 +1445,7 @@
                             <span th:text="${faq.question}" class="text-xs pr-4 group-hover:text-emerald-700 transition-colors">Pertanyaan</span>
                             <span class="text-emerald-500 text-[10px] transition-transform duration-300" :class="open ? 'rotate-180' : ''">▼</span>
                         </button>
-                        <div x-show="open" x-transition class="px-6 pb-4 text-[10px] text-gray-500 leading-relaxed font-medium border-t border-emerald-50/50 pt-3" th:text="${faq.answer}">
+                        <div x-show="open" x-transition class="px-6 pb-4 text-xs text-gray-500 leading-relaxed font-medium border-t border-emerald-50/50 pt-3" th:text="${faq.answer}">
                             Jawaban...
                         </div>
                     </div>
@@ -2188,13 +2232,12 @@
             
             <!-- Map Simulation Area -->
             <div class="flex-1 bg-gray-100 relative">
-                <!-- Static Map Placeholder (Real map would go here) -->
-                <div class="absolute inset-0 bg-[url('https://api.mapbox.com/styles/v1/mapbox/light-v10/static/107.6191,-6.9175,14,0/800x600?access_token=pk.eyJ1IjoiYm9vdHN0cmFwIiwiYSI6ImNrMnE4Z3YyZDAxZ3EzY3BnaHl5Z3J5eXoifQ.u1b5z0b9z0b9z0b9z0b9')] bg-cover bg-center">
-                    <!-- Truck Animation Simulation -->
-                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-                        <div class="bg-blue-600 text-white px-4 py-2 rounded-2xl text-[10px] font-black shadow-xl mb-2 animate-bounce">DI SINI</div>
-                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-2xl border-4 border-blue-600">🚛</div>
-                    </div>
+                <!-- Real Leaflet Map Area -->
+                <div id="fleetTrackerMap" class="absolute inset-0 z-0 bg-gray-200"></div>
+                <!-- Truck Animation Simulation Overlay -->
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10 pointer-events-none">
+                    <div class="bg-blue-600 text-white px-4 py-2 rounded-2xl text-[10px] font-black shadow-xl mb-2 animate-bounce">DI SINI</div>
+                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-2xl border-4 border-blue-600 text-lg">🚛</div>
                 </div>
                 
                 <!-- Bottom Info Overlay -->

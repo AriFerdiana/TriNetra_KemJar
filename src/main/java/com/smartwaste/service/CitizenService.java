@@ -18,4 +18,10 @@ public interface CitizenService {
     long countActive();
     void importCitizensFromCsv(org.springframework.web.multipart.MultipartFile file);
     void resetPassword(String citizenId, String newPassword);
+
+    CitizenProfileResponse createCitizen(String name, String email, String password, String nik, String phone, String address, String rtRw, String kelurahan);
+    
+    CitizenProfileResponse adminUpdateCitizen(String citizenId, String name, String email, String nik, String phone, String address, String rtRw, String kelurahan);
+    
+    void deleteCitizen(String citizenId);
 }
