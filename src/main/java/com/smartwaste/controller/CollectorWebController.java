@@ -95,6 +95,20 @@ public class CollectorWebController {
         } catch (Exception e) {
             model.addAttribute("pendingDeposits", org.springframework.data.domain.Page.empty());
         }
+        
+        // Fetch Pickup Requests
+        java.util.List<PickupRequest> pendingPickups = pickupRequestRepository.findByStatusOrderByPickupDateAsc(PickupStatus.PENDING);
+        java.util.List<PickupRequest> myActivePickups = java.util.Collections.emptyList();
+        
+        try {
+            collectorRepository.findByEmail(userDetails.getUsername()).ifPresent(collector -> {
+                model.addAttribute("myActivePickups", pickupRequestRepository.findByCollectorAndStatusOrderByPickupDateAsc(collector, PickupStatus.ACCEPTED));
+            });
+        } catch (Exception e) {
+            model.addAttribute("myActivePickups", myActivePickups);
+        }
+        
+        model.addAttribute("pendingPickups", pendingPickups);
 
         // Load riwayat setoran — sort by createdAt (bukan confirmedAt agar null-safe)
         try {
