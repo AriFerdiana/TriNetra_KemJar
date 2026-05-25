@@ -191,11 +191,14 @@
 
 <div class="dashboard-container">
     <main class="main-content">
-    <!-- Notification Alert -->
-    <div x-show="notification.show" x-transition.opacity.duration.300ms class="mb-6 p-4 rounded-2xl flex items-center gap-3 shadow-md"
+        <!-- Notification Alert -->
+    <div x-show="notification.show" x-transition.opacity.duration.300ms class="mb-6 p-4 rounded-2xl flex items-center justify-between shadow-md"
          :class="notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'">
-         <span x-text="notification.type === 'success' ? '✅' : '❌'"></span>
-         <p class="font-semibold text-sm" x-text="notification.message"></p>
+         <div class="flex items-center gap-3">
+             <span x-text="notification.type === 'success' ? '✅' : '❌'"></span>
+             <p class="font-semibold text-sm" x-text="notification.message"></p>
+         </div>
+         <button @click="notification.show = false" class="text-current opacity-60 hover:opacity-100 focus:outline-none px-2 text-xl font-bold transition-opacity">&times;</button>
     </div>
 
     <!-- ===== TAB: DASHBOARD (MAIN) ===== -->
