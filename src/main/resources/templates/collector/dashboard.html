@@ -73,6 +73,13 @@
                           th:attr="data-pending-count=${pendingDeposits.totalElements}"
                           th:text="${pendingDeposits.totalElements}">0</span>
                 </button>
+                <button type="button" @click="activeTab = 'urgent'; if(window.innerWidth < 1024) open = false" 
+                        :class="[activeTab === 'urgent' ? 'sidebar-item-active text-rose-600 bg-rose-50' : 'text-gray-500 hover:bg-gray-50', isSidebarCollapsed ? 'justify-center' : 'gap-4']"
+                        class="w-full flex items-center px-4 py-3.5 rounded-xl font-bold text-sm transition-all group relative overflow-hidden">
+                    <span class="text-xl group-hover:scale-110 transition-transform">🚨</span> 
+                    <span x-show="!isSidebarCollapsed" class="truncate whitespace-nowrap">Jemputan Urgent</span>
+                    <span th:if="${pendingPickups != null && pendingPickups.size() > 0}" x-show="!isSidebarCollapsed" class="ml-auto bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black shadow-sm" th:text="${pendingPickups.size()}"></span>
+                </button>
                 <button type="button" @click="activeTab = 'history'; if(window.innerWidth < 1024) open = false" 
                         :class="[activeTab === 'history' ? 'sidebar-item-active' : 'text-gray-500 hover:bg-gray-50', isSidebarCollapsed ? 'justify-center' : 'gap-4']"
                         class="w-full flex items-center px-4 py-3.5 rounded-xl font-bold text-sm transition-all group overflow-hidden">
