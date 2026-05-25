@@ -140,17 +140,17 @@
                     </div>
 
                     <!-- Dropdown Menu -->
-                    <div class="px-3 space-y-2">
-                        <button type="button" @click="activeTab='profile'; profileMenuOpen=false" class="w-full text-left flex items-center gap-4 px-5 py-4 text-xs font-black text-gray-600 hover:bg-gray-50 hover:text-emerald-600 rounded-[1.5rem] transition-all group">
+                    <div class="px-3 space-y-1">
+                        <button type="button" @click="activeTab='profile'; profileMenuOpen=false" class="w-full text-left flex items-center gap-4 px-5 py-3 text-xs font-black text-gray-600 hover:bg-gray-50 hover:text-emerald-600 rounded-[1.5rem] transition-all group">
                             <span class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-lg group-hover:bg-white group-hover:shadow-sm transition-all">👤</span>
                             Profil Saya
                         </button>
                     </div>
 
                     <!-- Logout Button -->
-                    <div class="border-t border-gray-50 mt-4 pt-4 px-3">
+                    <div class="border-t border-gray-50 mt-2 pt-2 px-3">
                         <form th:action="@{/auth/logout}" method="POST">
-                            <button type="submit" class="w-full text-left flex items-center gap-4 px-5 py-4 text-xs font-black text-red-500 hover:bg-red-50 rounded-[1.5rem] transition-all group">
+                            <button type="submit" class="w-full text-left flex items-center gap-4 px-5 py-3 text-xs font-black text-red-500 hover:bg-red-50 rounded-[1.5rem] transition-all group">
                                 <span class="w-10 h-10 bg-red-50/50 rounded-xl flex items-center justify-center text-lg group-hover:bg-white group-hover:shadow-sm transition-all">🚪</span>
                                 Keluar Aplikasi
                             </button>
