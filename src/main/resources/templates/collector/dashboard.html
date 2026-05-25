@@ -123,7 +123,7 @@
 
                 <div class="hidden sm:block">
                     <h1 class="text-2xl font-black text-gray-900 tracking-tight" 
-                        x-text="activeTab === 'dashboard' ? 'Dashboard Overview' : (activeTab === 'pending' ? 'Tugas Aktif' : (activeTab === 'history' ? 'Riwayat Konfirmasi' : (activeTab === 'stats' ? 'Analitik Performa' : 'Rute & Lokasi')))">
+                        x-text="activeTab === 'dashboard' ? 'Dashboard Overview' : (activeTab === 'urgent' ? 'Panggilan Darurat' : (activeTab === 'pending' ? 'Tugas Aktif' : (activeTab === 'history' ? 'Riwayat Konfirmasi' : (activeTab === 'stats' ? 'Analitik Performa' : 'Rute & Lokasi')))">
                         Dashboard
                     </h1>
                     <div class="flex items-center gap-4 mt-2">
@@ -505,7 +505,92 @@
                 </div>
             </div>
 
-            <!-- TAB: RIWAYAT -->
+            
+              <!-- TAB: JEMPUTAN URGENT -->
+              <div x-show="activeTab === 'urgent'" x-transition class="space-y-6" style="display: none;">
+                  <div class="flex items-center justify-between mb-8">
+                      <div>
+                          <h2 class="text-3xl font-black text-gray-900 tracking-tight">Panggilan Darurat</h2>
+                          <p class="text-gray-500 mt-2 font-medium">Respons panggilan jemputan sampah urgent dari warga.</p>
+                      </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                      <!-- Bursa Jemputan -->
+                      <div class="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8">
+                          <h3 class="text-xl font-black text-gray-900 mb-6 flex items-center gap-3">
+                              <span class="bg-rose-50 text-rose-500 p-2 rounded-xl">📢</span> 
+                              Bursa Jemputan Baru
+                          </h3>
+                          <div th:if="${pendingPickups == null || pendingPickups.isEmpty()}" class="text-center py-12 text-gray-400">
+                              <span class="text-5xl block mb-4">🏜️</span>
+                              <p class="font-bold">Belum ada panggilan urgent saat ini.</p>
+                          </div>
+                          <div class="space-y-4" th:if="${pendingPickups != null && !pendingPickups.isEmpty()}">
+                              <div th:each="pickup : ${pendingPickups}" class="bg-gray-50 rounded-2xl p-5 border border-gray-100 relative group overflow-hidden">
+                                  <div class="flex justify-between items-start mb-3">
+                                      <div>
+                                          <h4 class="font-black text-gray-900 text-lg" th:text="${pickup.citizen.name}">Warga</h4>
+                                          <p class="text-sm text-gray-500 font-medium" th:text="${pickup.citizen.address}">Alamat</p>
+                                      </div>
+                                      <span class="bg-rose-100 text-rose-700 text-xs px-3 py-1 rounded-full font-bold" th:text="${pickup.shift}">Pagi</span>
+                                  </div>
+                                  <div class="bg-white p-3 rounded-xl border border-gray-100 mb-4 text-sm text-gray-600 font-medium italic">
+                                      "<span th:text="${pickup.notes}">Catatan...</span>"
+                                  </div>
+                                  <form th:action="@{/collector/pickup/accept/{id}(id=${pickup.id})}" method="POST" class="inline">
+                                      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                      <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl transition-all shadow-md shadow-emerald-500/20 active:scale-[0.98]">
+                                          Terima Tugas
+                                      </button>
+                                  </form>
+                              </div>
+                          </div>
+                      </div>
+
+                      <!-- Tugas Aktif Saya -->
+                      <div class="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8">
+                          <h3 class="text-xl font-black text-gray-900 mb-6 flex items-center gap-3">
+                              <span class="bg-emerald-50 text-emerald-500 p-2 rounded-xl">💪</span> 
+                              Tugas Jemputan Saya
+                          </h3>
+                          <div th:if="${myActivePickups == null || myActivePickups.isEmpty()}" class="text-center py-12 text-gray-400">
+                              <span class="text-5xl block mb-4">☕</span>
+                              <p class="font-bold">Anda belum mengambil tugas urgent.</p>
+                          </div>
+                          <div class="space-y-4" th:if="${myActivePickups != null && !myActivePickups.isEmpty()}">
+                              <div th:each="pickup : ${myActivePickups}" th:id="'pickup-card-' + ${pickup.id}" class="bg-emerald-50/50 rounded-2xl p-5 border border-emerald-100 relative">
+                                  <div class="flex justify-between items-start mb-3">
+                                      <div>
+                                          <h4 class="font-black text-emerald-900 text-lg" th:text="${pickup.citizen.name}">Warga</h4>
+                                          <p class="text-sm text-emerald-700/70 font-medium" th:text="${pickup.citizen.address}">Alamat</p>
+                                      </div>
+                                      <span class="bg-emerald-100 text-emerald-700 text-xs px-3 py-1 rounded-full font-bold" th:text="${pickup.shift}">Pagi</span>
+                                  </div>
+                                  <div class="bg-white p-3 rounded-xl border border-emerald-100 mb-4 text-sm text-gray-600 font-medium">
+                                      <span class="block text-xs text-gray-400 mb-1 font-bold">Catatan Warga:</span>
+                                      <span th:text="${pickup.notes}">Catatan...</span>
+                                  </div>
+                                  <button type="button" @click="
+                                      const token = document.querySelector('meta[name='_csrf']').content;
+                                      const header = document.querySelector('meta[name='_csrf_header']').content;
+                                      fetch('/collector/pickup/complete/' + [[${pickup.id}]], { method: 'POST', headers: { [header]: token } });
+                                      document.querySelector('#pickup-card-' + [[${pickup.id}]]).style.display = 'none';
+                                      activeTab = 'dashboard';
+                                      manualDepositForm.citizenId = [[${pickup.citizen.id}]];
+                                      searchCitizenQuery = [[${pickup.citizen.name}]];
+                                      showManualDepositModal = true;
+                                  " class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/30 active:scale-[0.98] flex items-center justify-center gap-2">
+                                      <span>✅</span> Proses & Timbang
+                                  </button>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              
+              <!-- TAB: RIWAYAT -->
+
             <div x-show="activeTab === 'history'" x-transition class="space-y-6">
                 <div class="flex items-center justify-between mb-8">
                     <div>

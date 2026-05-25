@@ -3,6 +3,11 @@ package com.smartwaste.controller;
 import com.smartwaste.dto.response.WasteDepositResponse;
 import com.smartwaste.entity.enums.DepositStatus;
 import com.smartwaste.repository.CollectorRepository;
+import com.smartwaste.repository.PickupRequestRepository;
+import com.smartwaste.entity.PickupRequest;
+import com.smartwaste.entity.enums.PickupStatus;
+import com.smartwaste.entity.Collector;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.smartwaste.service.WasteDepositService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -38,6 +43,7 @@ public class CollectorWebController {
     private final com.smartwaste.repository.SmartBinRepository smartBinRepository;
     private final com.smartwaste.repository.FieldReportRepository fieldReportRepository;
     private final com.smartwaste.service.impl.FileStorageService fileStorageService;
+    private final PickupRequestRepository pickupRequestRepository;
 
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('COLLECTOR')")
@@ -422,5 +428,58 @@ public class CollectorWebController {
         boolean hasNew = currentCount > lastCount;
         return ResponseEntity.ok(java.util.Map.of("hasNew", hasNew, "currentCount", currentCount));
     }
+
+    @PostMapping("/pickup/accept/{id}")
+    @PreAuthorize("hasRole('COLLECTOR')")
+    public String acceptPickup(@PathVariable String id, @AuthenticationPrincipal UserDetails userDetails, RedirectAttributes redirectAttributes) {
+        try {
+            Collector collector = collectorRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new IllegalStateException("Collector not found"));
+                    
+            PickupRequest request = pickupRequestRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Request tidak ditemukan"));
+                    
+            if (request.getStatus() != PickupStatus.PENDING) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Tugas ini sudah diambil atau selesai.");
+                return "redirect:/collector/dashboard#urgent-pickup";
+            }
+            
+            request.setStatus(PickupStatus.ACCEPTED);
+            request.setCollector(collector);
+            pickupRequestRepository.save(request);
+            
+            redirectAttributes.addFlashAttribute("successMessage", "Berhasil mengambil tugas jemputan.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
+        }
+        return "redirect:/collector/dashboard#urgent-pickup";
+    }
+
+    // "Selesai & Timbang" button redirects to manual deposit form via JS, so this endpoint is for simple completion if they just want to close it.
+    @PostMapping("/pickup/complete/{id}")
+    @PreAuthorize("hasRole('COLLECTOR')")
+    public String completePickup(@PathVariable String id, @AuthenticationPrincipal UserDetails userDetails, RedirectAttributes redirectAttributes) {
+        try {
+            Collector collector = collectorRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new IllegalStateException("Collector not found"));
+                    
+            PickupRequest request = pickupRequestRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Request tidak ditemukan"));
+                    
+            if (request.getStatus() != PickupStatus.ACCEPTED || !request.getCollector().getId().equals(collector.getId())) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Anda tidak memiliki akses menyelesaikan tugas ini.");
+                return "redirect:/collector/dashboard#urgent-pickup";
+            }
+            
+            request.setStatus(PickupStatus.COMPLETED);
+            pickupRequestRepository.save(request);
+            
+            redirectAttributes.addFlashAttribute("successMessage", "Tugas jemputan berhasil diselesaikan!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", com.smartwaste.util.ExceptionUtils.getFriendlyMessage(e));
+        }
+        return "redirect:/collector/dashboard#urgent-pickup";
+    }
 }
+
 

@@ -19,4 +19,8 @@ public interface PickupRequestRepository extends JpaRepository<PickupRequest, St
     java.util.List<java.time.LocalDate> findPickupDatesByCitizenAndDateRange(@org.springframework.data.repository.query.Param("citizen") Citizen citizen, 
                                                                            @org.springframework.data.repository.query.Param("start") java.time.LocalDate start, 
                                                                            @org.springframework.data.repository.query.Param("end") java.time.LocalDate end);
+                                                                           
+    java.util.List<PickupRequest> findByStatusOrderByPickupDateAsc(com.smartwaste.entity.enums.PickupStatus status);
+    
+    java.util.List<PickupRequest> findByCollectorAndStatusOrderByPickupDateAsc(com.smartwaste.entity.Collector collector, com.smartwaste.entity.enums.PickupStatus status);
 }

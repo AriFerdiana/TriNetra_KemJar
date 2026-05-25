@@ -19,6 +19,10 @@ public class PickupRequest extends BaseEntity {
     @JoinColumn(name = "citizen_id", nullable = false)
     private Citizen citizen;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "collector_id")
+    private Collector collector;
+
     @Column(name = "pickup_date", nullable = false)
     private LocalDate pickupDate;
 
