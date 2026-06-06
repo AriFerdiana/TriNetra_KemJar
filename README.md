@@ -77,19 +77,19 @@ Proyek ini mendemonstrasikan penerapan pilar-pilar OOP secara menyeluruh dan men
     *   *Alternatif*: Anda juga dapat mengandalkan **Data Seeder Otomatis** bawaan Spring Boot saat aplikasi pertama kali dijalankan (pastikan tabel kosong agar seeder memicu pengisian data secara otomatis).
 
 ### 3. Konfigurasi Kredensial
-Buka file `src/main/resources/application.yml` (atau `application.properties`) dan sesuaikan baris-baris berikut:
+Gunakan Environment Variables atau buat file `application.yml` lokal di `src/main/resources/` (file ini diabaikan oleh Git).
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3606/db_tubes_pbo_trinetra?useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://localhost:3306/db_tubes_pbo_trinetra?useSSL=false&serverTimezone=UTC
     username: root          # Ganti dengan username MySQL Anda
-    password: password      # Ganti dengan password MySQL Anda
+    password: YOUR_DB_PASSWORD # Ganti dengan password MySQL Anda
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 # Konfigurasi Fitur Integrasi (Opsional)
 app:
   iot:
-    api-key: IOT-TRINETRA-NETRADUMP-2024-SECRET
+    api-key: YOUR_IOT_SECRET
   mistral:
     api-key: YOUR_MISTRAL_API_KEY # Masukkan API Key Mistral AI untuk mengaktifkan chatbot
 ```
@@ -97,25 +97,20 @@ app:
 ### 4. Menjalankan Aplikasi
 Buka terminal tepat di root direktori proyek, lalu eksekusi perintah Maven berikut:
 ```bash
+export ADMIN_PASSWORD=katasandikuat123
 mvn clean spring-boot:run
 ```
 Setelah proses startup sukses, buka browser Anda dan akses:
-👉 **`http://localhost:8080`**
+👉 **`http://localhost:8081`**
 
 ---
 
-## 👤 Kredensial Akses Akun Demo
+## 👤 Manajemen Akses (Security Warning)
 
-Untuk mempermudah pengujian alur kerja sistem, gunakan akun demo berikut yang telah di-seed dengan kata sandi universal:
-
-| Peran (Role) | Alamat Email (Username) | Kata Sandi (Password) | Deskripsi Fitur Utama |
-| :--- | :--- | :--- | :--- |
-| 👑 **Admin** | `admin@smartwaste.com` | `password` | Konfirmasi penukaran hadiah, kelola kategori sampah, lihat analitik global. |
-| 🏃‍♂️ **Petugas** | `petugas@smartwaste.com` | `password` | Validasi setoran pending warga, ambil sampah di lapangan, lacak muatan. |
-| 🏡 **Warga** | `warga@smartwaste.com` | `password` | Setor sampah, tanya jawab AI Chatbot, cek saldo Green Wallet, redeem hadiah. |
-
-> [!NOTE]
-> Seluruh kata sandi di atas dienkripsi dengan algoritma **BCrypt** di dalam database demi keamanan autentikasi.
+> [!WARNING]
+> Mulai dari pembaruan keamanan terbaru, tidak ada akun *dummy* yang disertakan secara otomatis di kode sumber.
+> Administrator pertama akan dibuat berdasarkan nilai Environment Variable `ADMIN_PASSWORD` yang dimasukkan sebelum menjalankan server.
+> Segala pengaturan otentikasi kini dilindungi dengan 2FA/MFA Google Authenticator.
 
 ---
 
