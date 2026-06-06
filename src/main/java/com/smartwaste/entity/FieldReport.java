@@ -30,4 +30,19 @@ public class FieldReport extends BaseEntity {
 
     @Column(nullable = false)
     private String status = "PENDING"; // PENDING, RESOLVED, REJECTED
+
+    // Handle deleted collector gracefully for Thymeleaf
+    public Collector getCollector() {
+        try {
+            if (this.collector != null) {
+                // Force proxy initialization
+                this.collector.getName();
+            }
+            return this.collector;
+        } catch (jakarta.persistence.EntityNotFoundException e) {
+            Collector dummy = new Collector();
+            dummy.setName("Petugas Dihapus");
+            return dummy;
+        }
+    }
 }

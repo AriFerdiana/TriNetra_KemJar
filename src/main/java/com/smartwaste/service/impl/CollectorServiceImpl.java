@@ -71,7 +71,19 @@ public class CollectorServiceImpl implements CollectorService {
 
     @Override
     public Page<CollectorResponse> searchCollectors(String keyword, Boolean active, Pageable pageable) {
-        return collectorRepository.searchCollectors(keyword, active, pageable).map(this::mapToResponse);
+        Page<com.smartwaste.entity.Collector> collectorsPage;
+        if (keyword == null || keyword.trim().isEmpty()) {
+            if (active == null) {
+                collectorsPage = collectorRepository.findAll(pageable);
+            } else if (active) {
+                collectorsPage = collectorRepository.findByActiveTrue(pageable);
+            } else {
+                collectorsPage = collectorRepository.searchCollectors(keyword, active, pageable);
+            }
+        } else {
+            collectorsPage = collectorRepository.searchCollectors(keyword, active, pageable);
+        }
+        return collectorsPage.map(this::mapToResponse);
     }
 
     @Override

@@ -85,4 +85,14 @@ public class WebController {
         }
         return "redirect:/auth/login";
     }
+
+    @PostMapping("/auth/logout")
+    public String manualLogout(jakarta.servlet.http.HttpServletRequest request, 
+                               jakarta.servlet.http.HttpServletResponse response, 
+                               org.springframework.security.core.Authentication auth) {
+        if (auth != null) {
+            new org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler().logout(request, response, auth);
+        }
+        return "redirect:/auth/login?logout=true";
+    }
 }

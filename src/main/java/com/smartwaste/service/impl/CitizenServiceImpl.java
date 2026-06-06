@@ -56,7 +56,19 @@ public class CitizenServiceImpl implements CitizenService {
 
     @Override
     public Page<CitizenProfileResponse> searchCitizens(String keyword, Boolean active, Pageable pageable) {
-        return citizenRepository.searchCitizens(keyword, active, pageable).map(this::mapToResponse);
+        Page<com.smartwaste.entity.Citizen> citizensPage;
+        if (keyword == null || keyword.trim().isEmpty()) {
+            if (active == null) {
+                citizensPage = citizenRepository.findAll(pageable);
+            } else if (active) {
+                citizensPage = citizenRepository.findByActiveTrue(pageable);
+            } else {
+                citizensPage = citizenRepository.searchCitizens(keyword, active, pageable); // Fallback
+            }
+        } else {
+            citizensPage = citizenRepository.searchCitizens(keyword, active, pageable);
+        }
+        return citizensPage.map(this::mapToResponse);
     }
 
     @Override

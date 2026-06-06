@@ -74,6 +74,20 @@ public abstract class User extends BaseEntity implements UserDetails {
     @Column(name = "active", nullable = false)
     private boolean active = true;
 
+    /**
+     * Status apakah MFA (Multi-Factor Authentication) diaktifkan.
+     * Jika true, user wajib memasukkan kode OTP dari Google Authenticator setelah login.
+     */
+    @Column(name = "mfa_enabled", nullable = false)
+    private boolean mfaEnabled = false;
+
+    /**
+     * Secret key yang digunakan untuk generate TOTP (Time-based One-Time Password).
+     * Disimpan terenkripsi di database. Hanya ada jika user mengaktifkan MFA.
+     */
+    @Column(name = "mfa_secret", length = 64)
+    private String mfaSecret;
+
     // ==================== Abstract Method (Polymorphism) ====================
 
     /**
@@ -155,4 +169,8 @@ public abstract class User extends BaseEntity implements UserDetails {
     public void setPhone(String phone) { this.phone = phone; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+    public boolean isMfaEnabled() { return mfaEnabled; }
+    public void setMfaEnabled(boolean mfaEnabled) { this.mfaEnabled = mfaEnabled; }
+    public String getMfaSecret() { return mfaSecret; }
+    public void setMfaSecret(String mfaSecret) { this.mfaSecret = mfaSecret; }
 }

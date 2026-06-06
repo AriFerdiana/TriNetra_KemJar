@@ -120,9 +120,31 @@ public class WasteDeposit extends BaseEntity {
     }
 
     // ==================== Manual Getters/Setters ====================
-    public Citizen getCitizen() { return citizen; }
+    public Citizen getCitizen() {
+        try {
+            if (this.citizen != null) {
+                this.citizen.getName();
+            }
+            return this.citizen;
+        } catch (jakarta.persistence.EntityNotFoundException e) {
+            Citizen dummy = new Citizen();
+            dummy.setName("Warga Dihapus");
+            return dummy;
+        }
+    }
     public void setCitizen(Citizen citizen) { this.citizen = citizen; }
-    public Collector getCollector() { return collector; }
+    public Collector getCollector() {
+        try {
+            if (this.collector != null) {
+                this.collector.getName();
+            }
+            return this.collector;
+        } catch (jakarta.persistence.EntityNotFoundException e) {
+            Collector dummy = new Collector();
+            dummy.setName("Petugas Dihapus");
+            return dummy;
+        }
+    }
     public void setCollector(Collector collector) { this.collector = collector; }
     public WasteCategory getCategory() { return category; }
     public void setCategory(WasteCategory category) { this.category = category; }

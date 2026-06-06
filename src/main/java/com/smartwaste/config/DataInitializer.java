@@ -67,10 +67,35 @@ public class DataInitializer implements CommandLineRunner {
         
         // FIX BUG: Hibernate unboxing error on version field due to existing NULL values
         try {
+            // --- BERSIHKAN DATABASE DULU SECARA BERURUTAN (CHILD KE PARENT) ---
+            // The following cleanup queries are commented out to prevent wiping the database on every restart
+            // which causes MFA setup and other data to be lost.
+            /*
+            String[] cleanupQueries = {
+                "ALTER TABLE citizens MODIFY nik VARCHAR(512)",
+                "ALTER TABLE citizens MODIFY address TEXT",
+                "DELETE FROM green_wallets",
+                "DELETE FROM waste_deposits",
+                "DELETE FROM chat_logs",
+                "DELETE FROM point_redemptions",
+                "DELETE FROM pickup_requests",
+                "DELETE FROM citizens",
+                "DELETE FROM collectors",
+                "DELETE FROM admins",
+                "DELETE FROM users"
+            };
+            
+            for (String query : cleanupQueries) {
+                try {
+                    jdbcTemplate.execute(query);
+                } catch (Exception ignored) { }
+            }
+            */
+            
             jdbcTemplate.execute("UPDATE green_wallets SET version = 0 WHERE version IS NULL");
-            System.out.println(">>> SEEDER DEBUG: Fixed NULL versions in green_wallets.");
+            System.out.println(">>> SEEDER DEBUG: Database schema check completed.");
         } catch (Exception e) {
-            log.warn("Could not execute version fix script: {}", e.getMessage());
+            log.warn("Could not execute cleanup script: {}", e.getMessage());
         }
 
         initAdmin();
@@ -90,103 +115,35 @@ public class DataInitializer implements CommandLineRunner {
 
     private void initAdmin() {
         if (!userRepository.existsByEmail("admin@smartwaste.com")) {
+            // [SECURITY PATCH] Mengambil password dari Environment Variable (Server Ubuntu)
+            String adminPassword = System.getenv("ADMIN_PASSWORD");
+            if (adminPassword == null || adminPassword.isBlank()) {
+                adminPassword = "DefaultPassword!234"; // Fallback sementara untuk lokal
+                log.warn("⚠️ PERINGATAN KEAMANAN: Environment Variable 'ADMIN_PASSWORD' tidak diset! Menggunakan password fallback sementara.");
+            }
+            
             Admin admin = new Admin(
                 "Super Admin",
                 "admin@smartwaste.com",
-                passwordEncoder.encode("password"),
+                passwordEncoder.encode(adminPassword),
                 "08100000001",
                 "Super Administrator"
             );
             userRepository.save(admin);
-            log.info("✅ Admin default dibuat: admin@smartwaste.com / password");
+            log.info("✅ Admin default dibuat dengan aman: admin@smartwaste.com");
         }
     }
 
     // ==================== Collector ====================
 
     private void initCollectors() {
-        String[] names = {
-            "Budi Santoso", "Andi Wijaya", "Suryo Utomo", "Dedi Kurniawan", "Eko Prasetyo",
-            "Fajar Ramadhan", "Guntur Saputra", "Heri Setiawan", "Indra Kusuma", "Joko Susilo"
-        };
-
-        for (int i = 0; i < names.length; i++) {
-            String email = "petugas" + (i + 1) + "@smartwaste.com";
-            if (!userRepository.existsByEmail(email)) {
-                Collector collector = new Collector(
-                    names[i], email,
-                    passwordEncoder.encode("password"),
-                    "081" + (100000000 + i),
-                    "B " + (1234 + i) + " SW",
-                    "Area Wilayah " + (char)('A' + i)
-                );
-                collectorRepository.save(collector);
-                log.info("✅ Collector {} dibuat: {}", i + 1, email);
-            }
-        }
-
-        if (!collectorRepository.existsByIotDeviceId("NETRADUMP-001")) {
-            Collector robot = new Collector(
-                "Robot NetraDUMP-001", "robot001@netradump.iot",
-                passwordEncoder.encode("R0b0t@NetraDUMP"),
-                "NETRADUMP-001", "Smart Bin Area A - Balai Desa", true
-            );
-            collectorRepository.save(robot);
-            log.info("✅ IoT Collector dibuat: NETRADUMP-001");
-        }
+        // [SECURITY PATCH] Seeder Collector dinonaktifkan untuk mencegah akun dummy bocor di production.
     }
 
     // ==================== Citizen ====================
 
     private void initCitizen() {
-        if (!userRepository.existsByEmail("warga@smartwaste.com")) {
-            Citizen citizen = new Citizen(
-                "Ahmad Warga", "warga@smartwaste.com",
-                passwordEncoder.encode("password"),
-                "081222333444", "3201012345678901",
-                "Jl. Kebersihan No. 10, RT 02/01"
-            );
-            citizen.setRtRw("02/01");
-            citizen.setKelurahan("Sukabersih");
-            Citizen saved = citizenRepository.save(citizen);
-            greenWalletRepository.save(new GreenWallet(saved));
-            log.info("✅ Citizen default dibuat: warga@smartwaste.com / password");
-        }
-
-        if (citizenRepository.count() < 50) {
-            String[] firstNames = {
-                "Budi","Siti","Agus","Dewi","Ahmad","Ayu","Joko","Rini","Hendra","Nur",
-                "Eko","Putri","Adi","Sri","Rudi","Ratna","Dwi","Lestari","Tri","Sari"
-            };
-            String[] lastNames = {
-                "Santoso","Wijaya","Kusuma","Pratama","Saputra",
-                "Wahyudi","Nugroho","Setiawan","Hidayat","Firmansyah",
-                "Susanto","Lubis","Siregar","Sihombing","Pangestu"
-            };
-            String[] kelurahans = {"Sukabersih","Maju Jaya","Tirta Makmur","Mekar Sari","Sumber Rejo"};
-            Random rnd = new Random(42);
-
-            for (int i = 1; i <= 50; i++) {
-                String email = "warga" + i + "@smartwaste.com";
-                if (!userRepository.existsByEmail(email)) {
-                    Citizen c = new Citizen(
-                        firstNames[rnd.nextInt(firstNames.length)] + " " + lastNames[rnd.nextInt(lastNames.length)],
-                        email,
-                        passwordEncoder.encode("password"),
-                        "0812" + (10000000 + rnd.nextInt(90000000)),
-                        "3201" + (100000000000L + rnd.nextInt(900000000)),
-                        "Jl. Dummy No. " + i
-                    );
-                    c.setRtRw(String.format("%02d/%02d", rnd.nextInt(10) + 1, rnd.nextInt(10) + 1));
-                    c.setKelurahan(kelurahans[rnd.nextInt(kelurahans.length)]);
-                    Citizen saved = citizenRepository.save(c);
-                    GreenWallet wallet = new GreenWallet(saved);
-                    wallet.addPoints(50 + rnd.nextInt(4950));
-                    greenWalletRepository.save(wallet);
-                }
-            }
-            log.info("✅ 50 Citizen dummy berhasil dibuat.");
-        }
+        // [SECURITY PATCH] Seeder Citizen dinonaktifkan untuk menghindari data NIK/Address palsu tercampur di production.
     }
 
     // ==================== Kategori Sampah ====================

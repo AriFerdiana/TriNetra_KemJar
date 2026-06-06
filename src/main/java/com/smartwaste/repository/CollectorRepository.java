@@ -46,7 +46,7 @@ public interface CollectorRepository extends JpaRepository<Collector, String> {
 
     @Query("SELECT c FROM Collector c WHERE c.iotDevice = false AND " +
            "(:active IS NULL OR c.active = :active) AND " +
-           "(:keyword IS NULL OR LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "(:keyword IS NULL OR :keyword = '' OR LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            " LOWER(c.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Collector> searchCollectors(@Param("keyword") String keyword, @Param("active") Boolean active, Pageable pageable);
 }

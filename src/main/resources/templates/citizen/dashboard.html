@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${pageTitle} + ' — NetraSphere'">Dashboard Warga — NetraSphere</title>
+    <title th:text="|${pageTitle} — NetraSphere|">Dashboard Warga — NetraSphere</title>
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -57,7 +57,7 @@
             <div class="hidden lg:flex items-center gap-4 py-1.5 px-4 bg-gray-50 rounded-2xl border border-gray-100">
                 <div class="text-right">
                     <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Poin Saya</p>
-                    <p class="text-xs font-black text-emerald-600" th:text="${#numbers.formatInteger(wallet.availablePoints, 0, 'POINT')} + ' pts'">0 pts</p>
+                    <p class="text-xs font-black text-emerald-600" th:text="|${#numbers.formatInteger(wallet.availablePoints, 0, 'POINT')} pts|">0 pts</p>
                 </div>
                 <div class="w-px h-6 bg-gray-200"></div>
                 <div class="text-right">
@@ -176,7 +176,7 @@
         
         <div class="space-y-1">
             <p class="text-sm font-black text-gray-900" th:text="${profile.name}">Nama Warga</p>
-            <p class="text-xs font-bold text-emerald-600 tracking-widest" th:text="'NIK: ' + ${profile.nik}">NIK: 1234567890</p>
+            <p class="text-xs font-bold text-emerald-600 tracking-widest" th:text="|NIK: ${profile.nik}|">NIK: 1234567890</p>
         </div>
         
         <p class="mt-8 text-[10px] text-gray-400 leading-relaxed font-medium">
@@ -344,7 +344,7 @@
                         <div class="mb-8">
                             <div class="flex justify-between text-[10px] font-black uppercase tracking-wider mb-2 text-white/80">
                                 <span>Progress ke level berikutnya</span>
-                                <span th:text="${wallet.progressToNextLevel} + '%'">0%</span>
+                                <span th:text="|${wallet.progressToNextLevel}%|">0%</span>
                             </div>
                             <div class="w-full bg-black/20 rounded-full h-2 overflow-hidden border border-white/5">
                                 <div class="bg-white rounded-full h-full transition-all duration-1000 shadow-[0_0_10px_rgba(255,255,255,0.5)]" th:style="'width: ' + ${wallet.progressToNextLevel} + '%'"></div>
@@ -405,7 +405,7 @@
                                         <span class="text-xs">☁️</span>
                                         <p class="text-[9px] font-black text-white/50 uppercase">CO₂</p>
                                     </div>
-                                    <p class="text-sm font-black" th:text="${profile != null ? #numbers.formatDecimal(profile.totalWeightKg * 2.5, 1, 1) : '0.0'} + ' kg'">0.0 kg</p>
+                                    <p class="text-sm font-black" th:text="|${profile != null ? #numbers.formatDecimal(profile.totalWeightKg * 2.5, 1, 1) : '0.0'} kg|">0.0 kg</p>
                                 </div>
                             </div>
                         </div>
@@ -603,7 +603,7 @@
 
                     <!-- Category Tag -->
                     <span class="text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.15em] shadow-sm"
-                          th:classappend="${article.type.name() == 'NEWS'} ? 'text-emerald-600 bg-emerald-50' : (${article.type.name() == 'EVENT'} ? 'text-blue-600 bg-blue-50' : 'text-amber-600 bg-amber-50')"
+                          th:classappend="${article.type.name() == 'NEWS' ? 'text-emerald-600 bg-emerald-50' : (article.type.name() == 'EVENT' ? 'text-blue-600 bg-blue-50' : 'text-amber-600 bg-amber-50')}"
                           th:text="${article.type}">Kategori</span>
 
                     <!-- Title & Summary -->
@@ -643,7 +643,7 @@
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h2 class="text-lg font-black text-gray-900">Riwayat Setoran Sampah</h2>
-                <p class="text-gray-400 text-sm" th:text="${deposits.totalElements} + ' total setoran'">0 total setoran</p>
+                <p class="text-gray-400 text-sm" th:text="|${deposits.totalElements} total setoran|">0 total setoran</p>
             </div>
             <button type="button" @click="activeTab='deposit'"
                     class="text-emerald-600 font-semibold text-sm hover:text-emerald-700 flex items-center gap-1">
@@ -693,7 +693,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="py-4 font-semibold text-gray-700 text-sm" th:text="${#numbers.formatDecimal(deposit.weightKg, 1, 1)} + ' kg'">0 kg</td>
+                        <td class="py-4 font-semibold text-gray-700 text-sm" th:text="|${#numbers.formatDecimal(deposit.weightKg, 1, 1)} kg|">0 kg</td>
                         <td class="py-4">
                             <span th:if="${deposit.pointsEarned > 0}"
                                   class="font-bold text-emerald-600 text-sm"
@@ -702,7 +702,7 @@
                         </td>
                         <td class="py-4">
                             <span class="px-3 py-1.5 rounded-full text-xs font-bold"
-                                  th:classappend="${deposit.status.name() == 'CONFIRMED'} ? 'badge-confirmed' : (${deposit.status.name() == 'REJECTED'} ? 'badge-rejected' : 'badge-pending')"
+                                  th:classappend="${deposit.status.name() == 'CONFIRMED' ? 'badge-confirmed' : (deposit.status.name() == 'REJECTED' ? 'badge-rejected' : 'badge-pending')}"
                                   th:text="${deposit.statusLabel}">Status</span>
                         </td>
                         <td class="py-4">
@@ -755,7 +755,7 @@
                                         <div class="text-xl group-hover:scale-110 transition-transform" th:text="${cat.iconUrl}">♻️</div>
                                         <div class="min-h-[24px] flex flex-col justify-center">
                                             <p class="font-black text-gray-800 text-[9px] uppercase tracking-wide leading-tight mb-1" th:text="${cat.name}">Kategori</p>
-                                            <p class="text-emerald-600 text-[8px] font-black" th:text="${cat.pointsPerKg} + ' pts'"></p>
+                                            <p class="text-emerald-600 text-[8px] font-black" th:text="|${cat.pointsPerKg} pts|"></p>
                                         </div>
                                     </label>
                                 </div>
@@ -1010,7 +1010,7 @@
                             <div class="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center text-3xl" x-text="selectedRewardIcon || '🎁'"></div>
                             <div class="flex-1">
                                 <p class="text-xs font-black text-gray-800 uppercase tracking-wide leading-tight" x-text="redeemDescription">Item Name</p>
-                                <p class="text-[10px] font-bold text-amber-600 mt-1" x-text="selectedRewardPoints.toLocaleString() + ' Points / Item'">0 Points</p>
+                                <p class="text-[10px] font-bold text-amber-600 mt-1" x-text="selectedRewardPoints ? selectedRewardPoints.toLocaleString() + ' Points / Item' : ''">0 Points</p>
                             </div>
                         </div>
 
@@ -1058,7 +1058,7 @@
                             </div>
                             <div class="flex justify-between items-center text-xs">
                                 <span class="font-bold text-gray-500">Harga Penukaran</span>
-                                <span class="font-black text-rose-500" x-text="'- ' + (selectedRewardPoints * redeemQuantity).toLocaleString()">- 0</span>
+                                <span class="font-black text-rose-500" x-text="selectedRewardPoints ? '- ' + (selectedRewardPoints * redeemQuantity).toLocaleString() : '- 0'">- 0</span>
                             </div>
                             <!-- Baris Ongkir: hanya muncul saat metode = delivery -->
                             <div class="flex justify-between items-center text-xs pb-3 border-b border-gray-200"
@@ -1075,7 +1075,7 @@
                                 <span class="font-black text-[10px] uppercase tracking-widest text-gray-400">Sisa Saldo Estimasi</span>
                                 <span class="font-black text-lg"
                                       :class="(window.citizenServerData.availablePoints - (selectedRewardPoints * redeemQuantity) - (fulfillmentMethod === 'delivery' ? 50 : 0)) >= 0 ? 'text-emerald-600' : 'text-rose-600'"
-                                      x-text="(window.citizenServerData.availablePoints - (selectedRewardPoints * redeemQuantity) - (fulfillmentMethod === 'delivery' ? 50 : 0)).toLocaleString()">0</span>
+                                      x-text="selectedRewardPoints ? (window.citizenServerData.availablePoints - (selectedRewardPoints * redeemQuantity) - (fulfillmentMethod === 'delivery' ? 50 : 0)).toLocaleString() : '0'">0</span>
                             </div>
                         </div>
 
@@ -1365,7 +1365,7 @@
                             </div>
                             <div class="col-span-2 pt-3 border-t border-white/5">
                                 <p class="text-[8px] font-bold text-amber-500 uppercase tracking-widest mb-1">Green Points Didistribusi</p>
-                                <div class="text-xl font-black text-amber-400" th:text="${#numbers.formatInteger(commStats.totalPointsDist, 0, 'POINT')} + ' pts'">0 pts</div>
+                                <div class="text-xl font-black text-amber-400" th:text="|${#numbers.formatInteger(commStats.totalPointsDist, 0, 'POINT')} pts|">0 pts</div>
                             </div>
                         </div>
                     </div>
@@ -2160,7 +2160,7 @@
 
             <!-- Hero Image -->
             <div class="aspect-video relative overflow-hidden bg-gray-100">
-                <img :src="selectedNews?.img?.startsWith('http') || selectedNews?.img?.startsWith('data:') ? selectedNews.img : '/uploads/' + selectedNews.img" 
+                <img :src="selectedNews ? (selectedNews.img && (selectedNews.img.startsWith('http') || selectedNews.img.startsWith('data:')) ? selectedNews.img : '/uploads/' + selectedNews.img) : ''" 
                      class="w-full h-full object-cover"
                      onerror="this.src='https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=1200'">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>

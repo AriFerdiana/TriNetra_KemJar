@@ -32,6 +32,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -269,6 +271,20 @@ public class CitizenWebController {
         return "citizen/dashboard";
     }
 
+    // ==================== Web Polling Endpoints ====================
+    @GetMapping("/notifications/unread")
+    @ResponseBody
+    public ResponseEntity<List<com.smartwaste.entity.Notification>> getUnreadNotifications(Authentication auth) {
+        return ResponseEntity.ok(notificationService.getUnreadNotifications(auth.getName()));
+    }
+
+    @PostMapping("/notifications/{id}/read")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> markNotificationRead(@PathVariable String id) {
+        notificationService.markAsRead(id);
+        return ResponseEntity.ok(Map.of("status", "success"));
+    }
+
     @PostMapping("/pickup/request")
     public String requestPickup(Authentication auth,
                                 @RequestParam String pickupDate,
@@ -388,9 +404,4 @@ public class CitizenWebController {
         return "redirect:/citizen/dashboard";
     }
 
-    @PostMapping("/notifications/{id}/read")
-    public String markNotificationRead(@org.springframework.web.bind.annotation.PathVariable String id, Authentication auth) {
-        notificationService.markAsRead(id);
-        return "redirect:/citizen/dashboard";
-    }
 }

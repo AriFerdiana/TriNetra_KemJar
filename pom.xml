@@ -31,6 +31,8 @@
         <okhttp.version>4.12.0</okhttp.version>
         <springdoc.version>2.3.0</springdoc.version>
         <lombok.version>1.18.30</lombok.version>
+        <bucket4j.version>8.10.1</bucket4j.version>
+        <totp.version>1.7.1</totp.version>
     </properties>
 
     <dependencies>
@@ -59,6 +61,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
+        <!-- ===== REDIS (Rate Limiting) ===== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
         <!-- ===== WEBSOCKET (Real-Time Updates) ===== -->
@@ -168,6 +176,28 @@
             <artifactId>spring-boot-devtools</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
+        </dependency>
+
+        <!-- ===== RATE LIMITING (Bucket4j + Caffeine Cache) ===== -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>${bucket4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
+        <!-- ===== MFA / 2FA (Google Authenticator / TOTP) ===== -->
+        <dependency>
+            <groupId>dev.samstevens.totp</groupId>
+            <artifactId>totp-spring-boot-starter</artifactId>
+            <version>${totp.version}</version>
         </dependency>
 
     </dependencies>

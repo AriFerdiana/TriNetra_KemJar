@@ -348,7 +348,7 @@ init() {
         
         async pollNotifications() {
             try {
-                const res = await fetch('/api/v1/notifications/unread');
+                const res = await fetch('/citizen/notifications/unread');
                 if (res.ok) {
                     const notifs = await res.json();
                     if (notifs && notifs.length > 0) {
@@ -364,7 +364,7 @@ init() {
                                 timerProgressBar: true
                             });
                             // Mark as read
-                            await fetch('/api/v1/notifications/' + n.id + '/read', { method: 'POST' });
+                            await fetch('/citizen/notifications/' + n.id + '/read', { method: 'POST' });
                         }
                     }
                 }

@@ -3,6 +3,7 @@ package com.smartwaste.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import com.smartwaste.security.AesEncryptor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,13 +44,17 @@ public class Citizen extends User {
     /**
      * Nomor Induk Kependudukan warga (NIK KTP).
      * Unik untuk setiap warga yang terdaftar.
+     * Dienkripsi dengan AES-256-GCM sebelum disimpan ke database.
      */
-    @Column(name = "nik", unique = true, length = 16)
+    @Convert(converter = AesEncryptor.class)
+    @Column(name = "nik", unique = false, length = 512)
     private String nik;
 
     /**
      * Alamat lengkap tempat tinggal warga.
+     * Dienkripsi dengan AES-256-GCM sebelum disimpan ke database.
      */
+    @Convert(converter = AesEncryptor.class)
     @Column(name = "address", columnDefinition = "TEXT")
     private String address;
 

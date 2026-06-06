@@ -72,14 +72,19 @@ public class PasswordResetService {
     public boolean resetPassword(String token, String newPassword) {
         Optional<PasswordResetToken> tokenOpt = tokenRepository.findByToken(token);
         
-        if (tokenOpt.isEmpty() || tokenOpt.get().isExpired()) {
+        if (tokenOpt.isEmpty()) {
             return false;
         }
 
-        User user = tokenOpt.get().getUser();
+        PasswordResetToken resetToken = tokenOpt.get();
+        if (resetToken.isExpired()) {
+            return false;
+        }
+
+        User user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        tokenRepository.delete(tokenOpt.get());
+        tokenRepository.delete(resetToken);
 
         return true;
     }

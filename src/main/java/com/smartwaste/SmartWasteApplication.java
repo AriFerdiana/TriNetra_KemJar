@@ -13,6 +13,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author Trinetra — Tugas Besar PBO
  * @version 1.0.0
  */
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+
 @SpringBootApplication
 public class SmartWasteApplication {
 

@@ -27,4 +27,7 @@ database_dump.sql.tmp
 
 # Antigravity artifacts
 artifacts/
-
+# Environment & Configuration files (Mencegah secret keys bocor ke GitHub)
+*.yml
+*.yaml
+*.env

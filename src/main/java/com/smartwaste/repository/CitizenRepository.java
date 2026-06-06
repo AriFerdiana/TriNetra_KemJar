@@ -29,7 +29,7 @@ public interface CitizenRepository extends JpaRepository<Citizen, String> {
     /** Full-text search warga berdasarkan nama, email, atau NIK dengan filter status. */
     @Query("SELECT c FROM Citizen c WHERE " +
            "(:active IS NULL OR c.active = :active) AND " +
-           "(:keyword IS NULL OR LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "(:keyword IS NULL OR :keyword = '' OR LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            " LOWER(c.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            " c.nik LIKE CONCAT('%', :keyword, '%'))")
     Page<Citizen> searchCitizens(@Param("keyword") String keyword, @Param("active") Boolean active, Pageable pageable);
