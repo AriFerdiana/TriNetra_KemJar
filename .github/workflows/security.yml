@@ -27,11 +27,10 @@ jobs:
           cache: maven
 
       # 1. OWASP Dependency Check
-      # Memeriksa apakah ada library (di pom.xml) yang memiliki CVE (Celah Keamanan Publik)
       - name: Run OWASP Dependency Check
         run: |
           mvn org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7
-        continue-on-error: true # Ganti jadi false di production agar pipeline gagal jika ada kerentanan tinggi
+        continue-on-error: true
 
       - name: Upload OWASP Report
         uses: actions/upload-artifact@v4
@@ -45,25 +44,60 @@ jobs:
   container-scan:
     name: Build & Scan Docker Image
     runs-on: ubuntu-latest
-    needs: security-scan # Dijalankan setelah pengecekan kode selesai
+    needs: security-scan
     
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Build Image menggunakan Dockerfile yang baru kita buat
+      # 2. Build Image menggunakan Dockerfile
       - name: Build Docker Image
         run: docker build -t trinetra/smartwaste:latest .
 
       # 3. TRIVY VULNERABILITY SCANNER
-      # Memeriksa celah keamanan OS Alpine dan komponen di dalam container
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'trinetra/smartwaste:latest'
           format: 'table'
-          exit-code: '1'          # Gagal build jika celah ditemukan
-          ignore-unfixed: true    # Abaikan bug yang belum ada perbaikannya
+          exit-code: '1'
+          ignore-unfixed: true
           vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH' # Hanya laporkan celah sangat berbahaya
+          severity: 'CRITICAL,HIGH'
 
+  # ==========================================
+  # JOB 3: DAST (DYNAMIC APPLICATION SECURITY TESTING)
+  # ==========================================
+  dast-scan:
+    name: OWASP ZAP Automated Penetration Test
+    runs-on: ubuntu-latest
+    needs: container-scan # Berjalan setelah image dipastikan bebas malware
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Setup dummy environment untuk test
+      - name: Create Dummy Env File
+        run: echo "MYSQL_ROOT_PASSWORD=RahasiaTrinetra2024!" > .env
+
+      # Jalankan arsitektur Zero Trust yang tadi kita buat
+      - name: Start Application via Docker Compose
+        run: |
+          docker-compose up -d
+          echo "Menunggu 45 detik agar Database dan Spring Boot siap..."
+          sleep 45
+
+      # Robot Red Team: OWASP ZAP Spidering & Scanning
+      - name: Run OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'http://localhost'
+          fail_action: false # Jangan batalkan build jika menemukan warning (karena ini baseline)
+          cmd_options: '-a'
+          
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-zap-report
+          path: report_html.html
