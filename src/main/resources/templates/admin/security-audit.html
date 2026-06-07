@@ -12,7 +12,7 @@
     <!-- Marked.js untuk merender response markdown dari Mistral AI -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
-<body class="bg-gray-100 font-sans leading-normal tracking-normal" x-data="{ aiLoading: false, aiResult: '' }">
+<body class="bg-gray-100 font-sans leading-normal tracking-normal" x-data="securityDashboard()">
 
     <!-- Navbar Sederhana -->
     <nav class="bg-blue-800 p-4 shadow-md text-white flex justify-between items-center">
@@ -103,32 +103,42 @@
 
     <!-- Script Alpine.js untuk memanggil endpoint AI backend -->
     <script>
-        function analyzeThreats() {
-            this.aiLoading = true;
-            this.aiResult = '';
-            
-            const csrfToken = document.querySelector("meta[name='_csrf']").getAttribute("content");
-            const csrfHeader = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
-            
-            fetch('/admin/security-audit/analyze', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    [csrfHeader]: csrfToken
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('securityDashboard', () => ({
+                aiLoading: false,
+                aiResult: '',
+                
+                analyzeThreats() {
+                    this.aiLoading = true;
+                    this.aiResult = '';
+                    
+                    const csrfToken = document.querySelector("meta[name='_csrf']").getAttribute("content");
+                    const csrfHeader = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
+                    
+                    fetch('/admin/security-audit/analyze', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            [csrfHeader]: csrfToken
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error("HTTP Status " + response.status);
+                        return response.text();
+                    })
+                    .then(text => {
+                        // Parsing markdown dari Mistral ke HTML menggunakan marked.js
+                        this.aiResult = marked.parse(text);
+                        this.aiLoading = false;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        this.aiResult = "<p class='text-red-500 font-bold'>Gagal menghubungi sistem AI. Periksa koneksi internet atau API Key Mistral Anda.</p>";
+                        this.aiLoading = false;
+                    });
                 }
-            })
-            .then(response => response.text())
-            .then(text => {
-                // Parsing markdown dari Mistral ke HTML menggunakan marked.js
-                this.aiResult = marked.parse(text);
-                this.aiLoading = false;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                this.aiResult = "<p class='text-red-500 font-bold'>Gagal menghubungi sistem AI. Periksa koneksi internet atau API Key Mistral Anda.</p>";
-                this.aiLoading = false;
-            });
-        }
+            }));
+        });
     </script>
 </body>
 </html>
