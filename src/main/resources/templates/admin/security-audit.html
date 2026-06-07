@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Audit Trail - SmartWaste Admin</title>
+    <!-- CSRF Meta Tags for Spring Security -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Marked.js untuk merender response markdown dari Mistral AI -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal" x-data="{ aiLoading: false, aiResult: '' }">
+
+    <!-- Navbar Sederhana -->
+    <nav class="bg-blue-800 p-4 shadow-md text-white flex justify-between items-center">
+        <div class="font-bold text-xl flex items-center gap-2">
+            🛡️ NetraSphere Security Center
+        </div>
+        <div>
+            <a href="/admin/dashboard" class="hover:underline text-sm">Kembali ke Admin Panel</a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto mt-8 px-4">
+        
+        <!-- HEADER & TOMBOL AI -->
+        <div class="flex justify-between items-center mb-6 bg-white p-6 rounded-lg shadow-sm">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Security Audit Trail</h1>
+                <p class="text-sm text-gray-500 mt-1">Pemantauan aktivitas mencurigakan pada Application Layer secara real-time.</p>
+            </div>
+            
+            <!-- Tombol Analisis AI -->
+            <button @click="analyzeThreats()" 
+                    :disabled="aiLoading"
+                    class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all flex items-center gap-2 disabled:opacity-50">
+                <span x-show="!aiLoading">🤖 Analisis Ancaman AI</span>
+                <span x-show="aiLoading" class="animate-pulse">⏳ AI Sedang Menganalisis...</span>
+            </button>
+        </div>
+
+        <!-- HASIL ANALISIS AI BOX (Hidden by default) -->
+        <div x-show="aiResult !== ''" class="mb-8 bg-purple-50 border-l-4 border-purple-500 p-6 rounded-r-lg shadow-md" style="display: none;">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="text-2xl">🧠</span>
+                <h2 class="text-lg font-bold text-purple-800">Mistral AI Threat Intelligence Report</h2>
+            </div>
+            <!-- Div ini akan diisi dengan HTML hasil render dari Markdown Mistral AI -->
+            <div id="ai-content" class="prose prose-purple max-w-none text-gray-700" x-html="aiResult"></div>
+        </div>
+
+        <!-- TABEL DATA LOG -->
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <table class="min-w-full leading-normal">
+                <thead>
+                    <tr>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Waktu Kejadian
+                        </th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            IP Pelaku
+                        </th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Jenis Ancaman
+                        </th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Detail Indikator
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="log : ${logs}" class="hover:bg-gray-50 transition-colors">
+                        <td class="px-5 py-4 border-b border-gray-200 text-sm">
+                            <span th:text="${#temporals.format(log.createdAt, 'dd-MM-yyyy HH:mm:ss')}" class="text-gray-900 whitespace-no-wrap"></span>
+                        </td>
+                        <td class="px-5 py-4 border-b border-gray-200 text-sm">
+                            <span class="bg-gray-200 text-gray-800 font-mono py-1 px-2 rounded text-xs" th:text="${log.ipAddress}"></span>
+                        </td>
+                        <td class="px-5 py-4 border-b border-gray-200 text-sm">
+                            <!-- Warna badge berdasarkan jenis ancaman -->
+                            <span th:if="${log.eventType == 'BRUTE_FORCE_DETECTED'}" class="bg-red-100 text-red-800 py-1 px-2 rounded-full text-xs font-bold" th:text="${log.eventType}"></span>
+                            <span th:if="${log.eventType == 'FILE_UPLOAD_BLOCKED'}" class="bg-orange-100 text-orange-800 py-1 px-2 rounded-full text-xs font-bold" th:text="${log.eventType}"></span>
+                            <span th:if="${log.eventType == 'ACCESS_DENIED'}" class="bg-yellow-100 text-yellow-800 py-1 px-2 rounded-full text-xs font-bold" th:text="${log.eventType}"></span>
+                            <span th:if="${log.eventType == 'LOGIN_FAILED'}" class="bg-gray-100 text-gray-600 py-1 px-2 rounded-full text-xs font-bold" th:text="${log.eventType}"></span>
+                            <span th:if="${log.eventType == 'LOGIN_SUCCESS' || log.eventType == 'MFA_SUCCESS'}" class="bg-green-100 text-green-800 py-1 px-2 rounded-full text-xs font-bold" th:text="${log.eventType}"></span>
+                        </td>
+                        <td class="px-5 py-4 border-b border-gray-200 text-sm text-gray-700">
+                            <span th:text="${log.detail}"></span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(logs)}">
+                        <td colspan="4" class="px-5 py-8 border-b border-gray-200 text-sm text-center text-gray-500">
+                            Belum ada log keamanan yang tercatat. Sistem dalam keadaan aman.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Script Alpine.js untuk memanggil endpoint AI backend -->
+    <script>
+        function analyzeThreats() {
+            this.aiLoading = true;
+            this.aiResult = '';
+            
+            const csrfToken = document.querySelector("meta[name='_csrf']").getAttribute("content");
+            const csrfHeader = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
+            
+            fetch('/admin/security-audit/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken
+                }
+            })
+            .then(response => response.text())
+            .then(text => {
+                // Parsing markdown dari Mistral ke HTML menggunakan marked.js
+                this.aiResult = marked.parse(text);
+                this.aiLoading = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                this.aiResult = "<p class='text-red-500 font-bold'>Gagal menghubungi sistem AI. Periksa koneksi internet atau API Key Mistral Anda.</p>";
+                this.aiLoading = false;
+            });
+        }
+    </script>
+</body>
+</html>

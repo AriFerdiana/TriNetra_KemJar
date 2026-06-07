@@ -109,6 +109,64 @@ public class ChatbotServiceImpl implements ChatbotService {
                 .build();
     }
 
+    @Override
+    public String analyzeSecurityThreats(String securityLogs) {
+        String securityPrompt = "Bertindaklah sebagai Pakar Cybersecurity Profesional (Blue Team). " +
+                "Berikut adalah data log keamanan terbaru dari server kami. Analisis log ini untuk menemukan " +
+                "pola serangan (seperti Brute Force, Web Shell Upload, atau Unauthorized Access), " +
+                "lalu berikan kesimpulan singkat dan rekomendasi perbaikan. Format jawaban dengan poin-poin " +
+                "dan sorot IP penyerang.";
+                
+        return callMistralApiWithCustomPrompt(securityLogs, securityPrompt);
+    }
+
+    /**
+     * Memanggil Mistral AI dengan custom system prompt (berguna untuk fitur selain chatbot citizen).
+     */
+    private String callMistralApiWithCustomPrompt(String userMessage, String customSystemPrompt) {
+        try {
+            // Bangun request body JSON
+            String requestBodyJson = objectMapper.writeValueAsString(new java.util.HashMap<>() {{
+                put("model", mistralModel);
+                put("max_tokens", maxTokens);
+                put("temperature", 0.3); // Suhu rendah agar analisis keamanan lebih presisi
+                put("messages", new java.util.ArrayList<>() {{
+                    add(new java.util.HashMap<>() {{
+                        put("role", "system");
+                        put("content", customSystemPrompt);
+                    }});
+                    add(new java.util.HashMap<>() {{
+                        put("role", "user");
+                        put("content", userMessage);
+                    }});
+                }});
+            }});
+
+            Request httpRequest = new Request.Builder()
+                    .url(mistralBaseUrl + "/chat/completions")
+                    .addHeader("Authorization", "Bearer " + mistralApiKey)
+                    .addHeader("Content-Type", "application/json")
+                    .post(RequestBody.create(requestBodyJson, JSON))
+                    .build();
+
+            try (Response httpResponse = httpClient.newCall(httpRequest).execute()) {
+                if (!httpResponse.isSuccessful() || httpResponse.body() == null) {
+                    log.error("Mistral API error: HTTP {}", httpResponse.code());
+                    return "Maaf, fitur Analisis AI saat ini tidak dapat memproses log karena gangguan jaringan. Silakan periksa koneksi API.";
+                }
+
+                String responseBody = httpResponse.body().string();
+                JsonNode json = objectMapper.readTree(responseBody);
+                return json.path("choices").get(0)
+                           .path("message").path("content").asText();
+            }
+
+        } catch (Exception e) {
+            log.error("Error saat memanggil Mistral API: {}", e.getMessage());
+            return "Maaf, terjadi kesalahan saat menghubungi server AI. Detail: " + e.getMessage();
+        }
+    }
+
     /**
      * Memanggil Mistral AI REST API menggunakan OkHttp.
      *

@@ -9,4 +9,5 @@ import com.smartwaste.dto.response.ChatResponse;
 public interface ChatbotService {
     ChatResponse chat(ChatRequest request, String citizenEmail);
     ChatResponse chatAnonymous(ChatRequest request);
+    String analyzeSecurityThreats(String securityLogs);
 }

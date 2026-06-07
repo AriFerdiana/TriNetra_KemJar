@@ -1,7 +1,10 @@
 package com.smartwaste.service;
 
+import com.smartwaste.entity.SecurityLog;
+import com.smartwaste.repository.SecurityLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -10,42 +13,49 @@ import java.time.format.DateTimeFormatter;
 /**
  * Service terpusat untuk mencatat semua event keamanan aplikasi.
  *
- * <p>Log yang dihasilkan ditulis dengan format terstruktur yang dapat
- * dibaca dan di-parse oleh Wazuh Agent di server Ubuntu/Debian nanti.
- * Format: [TIMESTAMP] [EVENT_TYPE] IP=x.x.x.x | DETAIL</p>
- *
- * <p>Tipe event yang dicatat:</p>
- * <ul>
- *   <li>LOGIN_SUCCESS — Login berhasil</li>
- *   <li>LOGIN_FAILED — Login gagal (salah password/email)</li>
- *   <li>BRUTE_FORCE_DETECTED — Rate limit terlampaui dari satu IP</li>
- *   <li>FILE_UPLOAD_BLOCKED — Upload file berbahaya dicegah</li>
- *   <li>ACCESS_DENIED — Akses ke resource yang tidak diizinkan</li>
- *   <li>MFA_SUCCESS — Verifikasi OTP berhasil</li>
- *   <li>MFA_FAILED — Verifikasi OTP gagal</li>
- *   <li>XSS_ATTEMPT — Potensi percobaan XSS terdeteksi</li>
- * </ul>
+ * <p>Log yang dihasilkan ditulis ke DUA tujuan:</p>
+ * <ol>
+ *   <li><b>File Text (smartwaste-security.log)</b>: Dibaca oleh agen Wazuh di Ubuntu.</li>
+ *   <li><b>Database MySQL (tabel security_logs)</b>: Dibaca oleh AI Dashboard internal kita.</li>
+ * </ol>
  */
 @Service
 public class SecurityAuditService {
 
-    // Logger ini ditulis ke file log terpisah (smartwaste-security.log)
-    // dikonfigurasi via logback-spring.xml
     private static final Logger securityLog = LoggerFactory.getLogger("SECURITY_AUDIT");
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    private final SecurityLogRepository securityLogRepository;
+
+    @Autowired
+    public SecurityAuditService(SecurityLogRepository securityLogRepository) {
+        this.securityLogRepository = securityLogRepository;
+    }
+
     /**
-     * Catat event keamanan ke log audit.
+     * Catat event keamanan ke log file dan database.
      *
      * @param eventType tipe event (misal: "BRUTE_FORCE_DETECTED")
      * @param ip        alamat IP client
      * @param detail    detail tambahan mengenai event
      */
     public void logSecurityEvent(String eventType, String ip, String detail) {
+        // 1. Catat ke file untuk Wazuh
         String timestamp = LocalDateTime.now().format(FORMATTER);
-        // Format terstruktur yang mudah di-parse oleh Wazuh regex rule
         securityLog.warn("[SECURITY_EVENT] timestamp={} event={} ip={} detail=\"{}\"",
             timestamp, eventType, ip, detail);
+
+        // 2. Simpan ke database untuk Dashboard & AI Mistral
+        try {
+            SecurityLog dbLog = SecurityLog.builder()
+                    .eventType(eventType)
+                    .ipAddress(ip)
+                    .detail(detail)
+                    .build();
+            securityLogRepository.save(dbLog);
+        } catch (Exception e) {
+            securityLog.error("Gagal menyimpan Security Log ke database: {}", e.getMessage());
+        }
     }
 
     /** Shortcut untuk mencatat login berhasil. */
