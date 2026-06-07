@@ -2,6 +2,23 @@ version: '3.8'
 
 services:
   # ==========================================
+  # SERVICE 0: NGINX REVERSE PROXY (SINGLE ENTRY POINT)
+  # ==========================================
+  # Ini adalah "Satpam" satu-satunya. Publik hanya bisa menyentuh Nginx.
+  proxy:
+    image: nginx:alpine
+    container_name: smartwaste-proxy
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    networks:
+      - smartwaste-net
+    depends_on:
+      - backend
+
+  # ==========================================
   # SERVICE 1: SMART WASTE BACKEND (SPRING BOOT)
   # ==========================================
   backend:
@@ -11,8 +28,10 @@ services:
     container_name: smartwaste-app
     image: trinetra/smartwaste:latest
     restart: always
-    ports:
-      - "8081:8081"
+    # SECURITY: Port 8081 sekarang hanya di-expose ke internal network (Nginx). 
+    # Publik tidak bisa mengakses IP:8081 lagi.
+    expose:
+      - "8081"
     environment:
       # Override properties di application.yml agar mengarah ke container DB
       - SPRING_DATASOURCE_URL=jdbc:mysql://database:3306/db_tubes_pbo_trinetra?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=Asia/Jakarta&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
