@@ -31,3 +31,7 @@ artifacts/
 *.yml
 *.yaml
 *.env
+
+# Pengecualian! File infrastruktur ini AMAN untuk di-push
+!docker-compose.yml
+!.github/workflows/security.yml

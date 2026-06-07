@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # SERVICE 1: SMART WASTE BACKEND (SPRING BOOT)
+  # ==========================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartwaste-app
+    image: trinetra/smartwaste:latest
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      # Override properties di application.yml agar mengarah ke container DB
+      - SPRING_DATASOURCE_URL=jdbc:mysql://database:3306/db_tubes_pbo_trinetra?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=Asia/Jakarta&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      # Redis juga diarahkan ke container internal jika dibutuhkan
+      - SPRING_DATA_REDIS_HOST=redis
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - smartwaste-net
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+
+  # ==========================================
+  # SERVICE 2: DATABASE (MYSQL)
+  # ==========================================
+  database:
+    image: mysql:8.0
+    container_name: smartwaste-db
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=db_tubes_pbo_trinetra
+    # SECURITY: Port 3306 TIDAK di-expose ke host (internet/publik). 
+    # Hanya 'backend' yang bisa mengakses ini lewat network internal Docker.
+    expose:
+      - "3306"
+    networks:
+      - smartwaste-net
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5
+
+  # ==========================================
+  # SERVICE 3: REDIS (UNTUK RATE LIMITING)
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: smartwaste-redis
+    restart: always
+    # SECURITY: Port Redis juga tidak di-expose keluar
+    expose:
+      - "6379"
+    networks:
+      - smartwaste-net
+    volumes:
+      - redis-data:/data
+
+# ==========================================
+# VOLUMES & NETWORKS (ISOLATION)
+# ==========================================
+volumes:
+  db-data:
+  redis-data:
+
+networks:
+  smartwaste-net:
+    driver: bridge
