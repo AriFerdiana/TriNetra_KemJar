@@ -66,10 +66,11 @@ public class MfaController {
     @PostMapping("/setup/enable")
     public String enableMfa(Authentication auth,
                             @RequestParam String otpCode,
+                            jakarta.servlet.http.HttpServletRequest request,
                             jakarta.servlet.http.HttpSession session,
                             RedirectAttributes redirectAttributes) {
         String email = auth.getName();
-        String ip = "web";
+        String ip = request.getRemoteAddr();
 
         boolean success = mfaService.enableMfa(email, otpCode);
         if (success) {
@@ -100,6 +101,7 @@ public class MfaController {
     @PostMapping("/verify")
     public String verifyMfa(@RequestParam String email,
                             @RequestParam String otpCode,
+                            jakarta.servlet.http.HttpServletRequest request,
                             jakarta.servlet.http.HttpSession session,
                             org.springframework.security.core.Authentication auth,
                             RedirectAttributes redirectAttributes) {
@@ -107,7 +109,7 @@ public class MfaController {
 
         if (valid) {
             session.setAttribute("MFA_VERIFIED", true);
-            auditService.logMfaEvent("MFA_SUCCESS", email, "web");
+            auditService.logMfaEvent("MFA_SUCCESS", email, request.getRemoteAddr());
             
             // Redirect ke halaman sebelumnya jika ada (HANYA JIKA REQUEST AWAL ADALAH GET)
             org.springframework.security.web.savedrequest.SavedRequest savedRequest = 
@@ -130,7 +132,7 @@ public class MfaController {
             
             return "redirect:/";
         } else {
-            auditService.logMfaEvent("MFA_FAILED", email, "web");
+            auditService.logMfaEvent("MFA_FAILED", email, request.getRemoteAddr());
             redirectAttributes.addFlashAttribute("errorMessage",
                 "Kode OTP salah atau sudah kadaluarsa. Silakan coba lagi.");
             return "redirect:/mfa/verify?email=" + email;
@@ -141,10 +143,10 @@ public class MfaController {
      * Nonaktifkan MFA untuk user yang sedang login.
      */
     @PostMapping("/disable")
-    public String disableMfa(Authentication auth, RedirectAttributes redirectAttributes) {
+    public String disableMfa(Authentication auth, jakarta.servlet.http.HttpServletRequest request, RedirectAttributes redirectAttributes) {
         String email = auth.getName();
         mfaService.disableMfa(email);
-        auditService.logMfaEvent("MFA_DISABLED", email, "web");
+        auditService.logMfaEvent("MFA_DISABLED", email, request.getRemoteAddr());
         redirectAttributes.addFlashAttribute("successMessage", "MFA berhasil dinonaktifkan.");
         return "redirect:/mfa/setup";
     }
