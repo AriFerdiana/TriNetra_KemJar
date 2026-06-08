@@ -138,12 +138,34 @@ public class DataInitializer implements CommandLineRunner {
 
     private void initCollectors() {
         // [SECURITY PATCH] Seeder Collector dinonaktifkan untuk mencegah akun dummy bocor di production.
+        // Diaktifkan kembali hanya jika environment variable SEED_DUMMY_DATA=true
+        String seedDummy = System.getenv("SEED_DUMMY_DATA");
+        if (seedDummy == null || !seedDummy.equalsIgnoreCase("true")) {
+            return;
+        }
+
+        if (collectorRepository.count() == 0) {
+            Collector c1 = new Collector("Budi Collector", "collector@smartwaste.com", passwordEncoder.encode("Collector!123"), "08122222222", "D 1234 XY", "Kecamatan Coblong");
+            collectorRepository.save(c1);
+            log.info("✅ Dummy Collector berhasil dibuat: collector@smartwaste.com");
+        }
     }
 
     // ==================== Citizen ====================
 
     private void initCitizen() {
         // [SECURITY PATCH] Seeder Citizen dinonaktifkan untuk menghindari data NIK/Address palsu tercampur di production.
+        // Diaktifkan kembali hanya jika environment variable SEED_DUMMY_DATA=true
+        String seedDummy = System.getenv("SEED_DUMMY_DATA");
+        if (seedDummy == null || !seedDummy.equalsIgnoreCase("true")) {
+            return;
+        }
+
+        if (citizenRepository.count() == 0) {
+            Citizen c1 = new Citizen("Siti Warga", "warga@smartwaste.com", passwordEncoder.encode("Warga!123"), "08133333333", "3273111111111111", "Jl. Dipatiukur No. 1");
+            citizenRepository.save(c1);
+            log.info("✅ Dummy Citizen berhasil dibuat: warga@smartwaste.com");
+        }
     }
 
     // ==================== Kategori Sampah ====================
